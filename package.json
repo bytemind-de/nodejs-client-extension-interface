@@ -24,5 +24,8 @@
   "bugs": {
     "url": "https://github.com/bytemind-de/nodejs-plate-server/issues"
   },
-  "homepage": "https://github.com/bytemind-de/nodejs-plate-server#readme"
+  "homepage": "https://github.com/bytemind-de/nodejs-plate-server#readme",
+  "dependencies": {
+    "node-beacon-scanner": "github:bytemind-de/node-beacon-scanner"
+  }
 }
