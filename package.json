@@ -1,0 +1,28 @@
+{
+  "name": "nodejs-plate-server",
+  "version": "0.0.1",
+  "description": "Node.js PLATE is a platform extension server that enhances connected clients with additional capabilities of the OS (e.g. Bluetooth beacon scanning).",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bytemind-de/nodejs-plate-server.git"
+  },
+  "keywords": [
+    "Websocket",
+    "Bluetooth",
+    "BLE",
+    "Eddystone",
+    "Beacon",
+    "Browser",
+    "Server"
+  ],
+  "author": "Bytemind.de",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/bytemind-de/nodejs-plate-server/issues"
+  },
+  "homepage": "https://github.com/bytemind-de/nodejs-plate-server#readme"
+}
