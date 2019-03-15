@@ -1,0 +1,11 @@
+{
+	"hostname": "rpi.local",
+	"port": 20781,
+	"ssl": true,
+	"logger": { 
+		"level": "error"
+	},
+	"xtensions": [
+		"ble-beacon-scanner"
+	]
+}
