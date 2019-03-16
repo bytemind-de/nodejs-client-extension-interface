@@ -1,14 +1,14 @@
 {
-  "name": "nodejs-plate-server",
-  "version": "0.6.0",
-  "description": "Node.js PLATE is a platform extension server that enhances connected clients with additional capabilities of the OS (e.g. Bluetooth beacon scanning).",
+  "name": "clexi",
+  "version": "0.6.1",
+  "description": "Node.js CLEXI is a lightweight client extension interface that enhances connected clients with functions of the underlying operating system using a duplex, realtime Websocket connection.",
   "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/bytemind-de/nodejs-plate-server.git"
+    "url": "git+https://github.com/bytemind-de/nodejs-client-extension-interface.git"
   },
   "keywords": [
     "Websocket",
@@ -18,14 +18,14 @@
     "Beacon",
     "Browser",
 	"Extension",
-    "Server"
+    "Client-Server"
   ],
   "author": "Bytemind.de",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/bytemind-de/nodejs-plate-server/issues"
+    "url": "https://github.com/bytemind-de/nodejs-client-extension-interface/issues"
   },
-  "homepage": "https://github.com/bytemind-de/nodejs-plate-server#readme",
+  "homepage": "https://github.com/bytemind-de/nodejs-client-extension-interface#readme",
   "dependencies": {
     "fastify": "^2.1.0",
     "fastify-static": "^2.3.4",

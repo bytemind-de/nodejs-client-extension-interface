@@ -1,6 +1,6 @@
 {
-	"hostname": "rpi.local",
-	"port": 20781,
+	"hostname": "raspberrypi.local",
+	"port": 8443,
 	"ssl": true,
 	"logger": { 
 		"level": "error"
