@@ -45,22 +45,22 @@ function loadXtensions(){
 			xtensions[settings.xtensions] = new X(
 				function(msg){
 					//On start
-					console.log(JSON.stringify(msg, null, '  '));
+					server.log.info(JSON.stringify(msg, null, '  '));
 					
 				}, function(msg){
 					//On event
-					//console.log(JSON.stringify(msg, null, '  '));
-					console.log('Broadcasting event: ' + msg.type);
+					server.log.debug('Broadcasting event: ' + msg.type);
+					server.log.trace(JSON.stringify(msg, null, '  '));
 					broadcast(msg);
 					
 				}, function(error){
 					//On error
-					console.log(JSON.stringify(error, null, '  '));
+					server.log.error(JSON.stringify(error, null, '  '));
 					broadcast(error);
 				}
 			);
 		}
-		console.log('Loaded extensions: ' + n);
+		console.log('Extensions loaded: ' + n);
 	}
 }
 
@@ -83,13 +83,13 @@ server.listen(port, hostname, function(err, address){
 		server.log.error(err);
 		process.exit(1);
 	}
-	//server.log.info(`Server running at ${address}`);
 	console.log(`Server running at: ${address}`);
 	console.log(`Hostname: ${hostname} - SSL: ${settings.ssl}`);
+	server.log.info(`Server running at ${address}`);
 	
 	//Websocket interface
 	server.ws.on('connection', function(socket){
-		console.log('Client connected.');
+		server.log.info('Client connected.');
 		
 		socket.on('message', function(msg){
 			//Broadcast to all
@@ -98,7 +98,7 @@ server.listen(port, hostname, function(err, address){
 			
 			//Handle extensions input
 			let msgObj = JSON.parse(msg);
-			console.log('Calling plugin: ' + msgObj.type);
+			server.log.info('Calling plugin: ' + msgObj.type);
 			if (msgObj.type && xtensions[msgObj.type]){
 				let response = xtensions[msgObj.type].input(msgObj);
 				socket.send(JSON.stringify({
@@ -123,11 +123,11 @@ server.listen(port, hostname, function(err, address){
 		});
 		
 		socket.on('close', function(){
-			console.log('Client disconnected.');
+			server.log.info('Client disconnected.');
 		});
 		
 		socket.on('error', function(e){
-			console.log(`Client error: ${e.message}`);
+			server.log.error(`Client error: ${e.message}`);
 		});
 	});
 	

@@ -1,7 +1,14 @@
 const BeaconScanner = require('node-beacon-scanner');
 const noble = require('@abandonware/noble');
 const scanner = new BeaconScanner({'noble': noble});
-	
+
+/**
+* Reference implementation of CLEXI extension. Each extension can have 3 callbacks
+* and one input method. The callbacks have to define an object with type: "extension-name"
+* (see below) and arbitrary (serializeable) additional data. The input method may use
+* an object with field "ctrl" to control the extension (on/off etc.) and must return an
+* object or string.
+*/	
 BleBeaconScanner = function(onStartCallback, onEventCallback, onErrorCallback){
 	//Set an Event handler for the Bluetooth service
 	noble.on('stateChange', (state) => {
@@ -36,8 +43,9 @@ BleBeaconScanner = function(onStartCallback, onEventCallback, onErrorCallback){
 	
 	//Input
 	this.input = function(msg){
-		//TODO: implement start stop?
-		console.log(JSON.stringify(msg, null, '  '));
+		//TODO: implement start stop
+		//if (msg.ctrl){ ... }
+		//console.log(JSON.stringify(msg, null, '  '));
 		return "got it";
 	}
 };
