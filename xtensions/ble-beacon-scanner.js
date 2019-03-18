@@ -3,19 +3,21 @@ const noble = require('@abandonware/noble');
 const scanner = new BeaconScanner({'noble': noble});
 
 /**
-* Reference implementation of CLEXI extension. Each extension can have 3 callbacks
-* and one input method. The callbacks have to define an object with type: "extension-name"
-* (see below) and arbitrary (serializeable) additional data. The input method may use
-* an object with field "ctrl" to control the extension (on/off etc.) and must return an
-* object or string.
+* CLEXI extension for Bluetooth LE beacon scanning. The input method uses msg.data.ctrl
+* to control the extension (on/off etc.) and returns a confirmation string.
 */	
 BleBeaconScanner = function(onStartCallback, onEventCallback, onErrorCallback){
+	//Controls
+	var doScan = false;
+	
 	//Set an Event handler for the Bluetooth service
 	noble.on('stateChange', (state) => {
 		if (state === "poweredOff"){
-			scanner.stopScan();
+			stopScanning();
 		}else if (state === "poweredOn"){
-			scanner.startScan();
+			if (doScan){
+				startScanning();
+			}
 		}
 	});
 
@@ -23,31 +25,60 @@ BleBeaconScanner = function(onStartCallback, onEventCallback, onErrorCallback){
 	scanner.onadvertisement = (ad) => {
 		//console.log(JSON.stringify(ad, null, '  '));
 		if (onEventCallback) onEventCallback({
-			type: "ble-beacon-scanner",
-			data: ad
+			data: {
+				beacon: ad
+			}
 		});
 	};
 
 	//Start scanning
-	scanner.startScan().then(() => {
-		if (onStartCallback) onStartCallback({
-			type: "ble-beacon-scanner",
-			msg: "Scanning for BLE beacons."
+	function startScanning(msgId, socket){
+		scanner.startScan().then(() => {
+			if (onEventCallback){
+				onEventCallback({
+					data: {
+						ctrl: "started"
+					}
+				});
+			}
+		}).catch((error) => {
+			if (onErrorCallback) onErrorCallback({
+				error: error
+			});
 		});
-	}).catch((error) => {
-		if (onErrorCallback) onErrorCallback({
-			type: "ble-beacon-scanner",
-			error: error
+	}
+	
+	//Stop scanning
+	function stopScanning(msgId, socket){
+		scanner.stopScan();
+		if (onEventCallback) onEventCallback({
+			data: {
+				ctrl: "stopped"
+			}
 		});
-	});
+	}
 	
 	//Input
-	this.input = function(msg){
-		//TODO: implement start stop
-		//if (msg.ctrl){ ... }
+	this.input = function(msg, socket){
 		//console.log(JSON.stringify(msg, null, '  '));
-		return "got it";
+		var req = msg.data;
+		//Start/Stop requests
+		if (req){
+			if (req.ctrl == "start"){
+				startScanning(msg.id, socket);
+				return "starting"; 		//will send an additional 'started' event later
+				
+			}else if (req.ctrl == "stop"){
+				setTimeout(stopScanning, 300, msg.id, socket);		//... because this method has no promise ...
+				return "stopping";		//will send an additional 'stopped' event later
+			}
+		}
+		return "unknown request";
 	}
+	
+	if (onStartCallback) onStartCallback({
+		msg: "Bluetooth LE beacon scanner initialized."
+	});
 };
 
 module.exports = BleBeaconScanner;

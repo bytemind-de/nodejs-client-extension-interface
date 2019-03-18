@@ -20,6 +20,7 @@ if (settings.logger){
 		level: 'info' 
 	};
 }
+var isLogLevelDebugOrTrace = (server_options.logger.level && (server_options.logger.level == "debug" || server_options.logger.level == "trace"));
 if (settings.ssl){
 	server_options.https = {
 		key: fs.readFileSync(path.join(__dirname, '/ssl/key.pem')),
@@ -39,22 +40,29 @@ var xtensions = {};
 function loadXtensions(){
 	let n = 0;
 	if (settings.xtensions && (settings.xtensions instanceof Array)){
-		for (let i=0; i<settings.xtensions.length; i++){
+		for (var i=0; i<settings.xtensions.length; i++){
 			n++;
-			let X = require('./xtensions/' + settings.xtensions);
-			xtensions[settings.xtensions] = new X(
+			let xName = settings.xtensions[i];
+			let X = require('./xtensions/' + xName);
+			xtensions[xName] = new X(
 				function(msg){
 					//On start
+					msg.type = xName;
 					server.log.info(JSON.stringify(msg, null, '  '));
 					
+				//EVENT OUTPUT TO CLIENT
 				}, function(msg){
 					//On event
-					server.log.debug('Broadcasting event: ' + msg.type);
-					server.log.trace(JSON.stringify(msg, null, '  '));
+					msg.type = xName;
+					if (isLogLevelDebugOrTrace){
+						server.log.debug('Broadcasting event: ' + msg.type);
+						server.log.trace(JSON.stringify(msg, null, '  '));
+					}
 					broadcast(msg);
 					
 				}, function(error){
 					//On error
+					error.type = xName;
 					server.log.error(JSON.stringify(error, null, '  '));
 					broadcast(error);
 				}
@@ -64,20 +72,32 @@ function loadXtensions(){
 	}
 }
 
-// Broadcast to all.
+//Broadcast to receiver or all
 function broadcast(data){
-	server.ws.clients.forEach(function each(client) {
-		if (client.readyState === 1) {		//WebSocket.OPEN should be 1
-			if (typeof data === "object"){
-				client.send(JSON.stringify(data));
-			}else{
-				client.send(data);
-			}
+	if (data.receiver){
+		//single receiver?
+		var client = data.receiver;
+		delete data.receiver; 	//remove object before sending
+		if (typeof data === "object"){
+			client.send(JSON.stringify(data));
+		}else{
+			client.send(data);
 		}
-	});
+	}else{
+		//broadcast to all
+		server.ws.clients.forEach(function each(client){
+			if (client.readyState === 1) {		//WebSocket.OPEN should be 1
+				if (typeof data === "object"){
+					client.send(JSON.stringify(data));
+				}else{
+					client.send(data);
+				}
+			}
+		});
+	}
 }
 
-// Run the server!
+//Run the server
 server.listen(port, hostname, function(err, address){
 	if (err){
 		server.log.error(err);
@@ -91,32 +111,24 @@ server.listen(port, hostname, function(err, address){
 	server.ws.on('connection', function(socket){
 		server.log.info('Client connected.');
 		
+		//CLIENT INPUT
 		socket.on('message', function(msg){
-			//Broadcast to all
-			//broadcast(msg);
-			//socket.send(msg);
+			let msgObj = JSON.parse(msg);
 			
 			//Handle extensions input
-			let msgObj = JSON.parse(msg);
-			server.log.info('Calling plugin: ' + msgObj.type);
 			if (msgObj.type && xtensions[msgObj.type]){
-				let response = xtensions[msgObj.type].input(msgObj);
+				server.log.info('Calling xtensions: ' + msgObj.type);
+				let response = xtensions[msgObj.type].input(msgObj, socket);
 				socket.send(JSON.stringify({
 					response: response,
-					type: msgObj.type
-				}));
-			
-			//msg
-			}else if (msgObj.type && msgObj.type == "msg"){
-				socket.send(JSON.stringify({
-					response: msgObj.text,
-					type: msgObj.type
+					type: msgObj.type,
+					id: msgObj.id
 				}));
 			
 			//undefined
 			}else{
 				socket.send(JSON.stringify({
-					response: ("unknown message type: " + msgObj.type),
+					response: ("Unknown message type: " + msgObj.type),
 					type: "undefined"
 				}));
 			}

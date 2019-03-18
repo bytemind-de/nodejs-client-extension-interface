@@ -5,11 +5,11 @@
 	<!-- web app settings -->
 	<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=0">
 	<!-- Title, icons and colors -->
-	<title>Server</title>
-	<meta name="application-name" content="Server"/>
-	<meta name="apple-mobile-web-app-title" content="Server">
-	<meta name="description" content="Server test-page">
-	<meta name="theme-color" content="#000">
+	<title>CLEXI Test</title>
+	<meta name="application-name" content="CLEXI Test"/>
+	<meta name="apple-mobile-web-app-title" content="CLEXI Test">
+	<meta name="description" content="CLEXI test-page">
+	<meta name="theme-color" content="#eee">
 	<!-- Icons
 	<link rel="icon" sizes="192x192" href="img/icon.png">
 	<link rel="apple-touch-icon" href="img/icon.png">
@@ -20,86 +20,93 @@
 	<script type="text/javascript" src="js/jquery-3.1.1.min.js" charset="UTF-8"></script>
 	<link rel="stylesheet" href="css/main.css">
 	-->
+	<script type="text/javascript" src="lib/clexi-0.7.0.js" charset="UTF-8"></script>
 	<style>
 	</style>
 </head>
 <body>
 	<div>
-		Hello World
+		<h3>Node.js Client Extension Interface - CLEXI.js</h3>
+		<p>Test-Page</p>
 	</div>
 	<div>
 		<button onclick="connectToWebsocket()">Connect</button>
 		<button onclick="closeWebsocketConnection()">Close</button>
-		<button onclick="websocketSendPing()">Ping</button>
-		<button onclick="websocketSendToBleBeaconScanner()">Ping BLE Beacon Scanner</button>
+		<button onclick="websocketSendPing()">Ping CLEXI</button>
+		<button onclick="websocketSendStartToBleBeaconScanner()">Start BLE Beacon Scanner</button>
+		<button onclick="websocketSendStopToBleBeaconScanner()">Stop BLE Beacon Scanner</button>
 	</div>
-	<div id="log-out"></div>
+	<div id="log-out">
+		<p>Client log:</p>
+	</div>
 	<script>
-		//Websocket test
-		var ws;
-		var msgId = 0;
+		var logOut = document.getElementById('log-out');
+		function log(msg){
+			console.log(msg);
+			logOut.innerHTML += (msg + "<br>");
+		}
+		
+		//CLEXI Demo
+		
 		function connectToWebsocket(){
-			var logOut = document.getElementById('log-out');
-			var host;
-			if (location.origin.indexOf("https") == 0){
-				host = location.origin.replace(/^https/, 'wss');
-			}else{
-				host = location.origin.replace(/^http/, 'ws');
-			}
-			
-			ws = new WebSocket(host);
-			
-			ws.onopen = function(event){
-				console.log("Client connected.");
-				logOut.innerHTML += ("Client connected.<br>");
-			};
-			
-			ws.onmessage = function(msg){
-				console.log(msg.data);
-				logOut.innerHTML += (msg.data + "<br>");
-			};
-			
-			ws.onerror = function(error){
-				console.log("WS error: " + error);
-				logOut.innerHTML += ("WS error: " + error + "<br>");
-			};
-			
-			ws.onclose = function(event){
-				console.log("Connection closed.");
-				logOut.innerHTML += ("Connection closed.<br>");
-			};
-			
-			console.log("Connecting...");
-			logOut.innerHTML += ("Connecting...<br>");
+			var hostURL = undefined; 	//auto-choose origin
+			ClexiJS.connect(hostURL, function(e){
+				log("CLEXI connected");
+				//listen to events:
+				subscribeToBeaconScanner();
+				subscribeToBroadcaster();
+				
+			}, function(e){
+				log("CLEXI closed");
+				removeSubscriptions();
+				
+			}, function(err){
+				log("CLEXI error: " + ((typeof err === "object")? JSON.stringify(err) : err));
+				removeSubscriptions();
+			});
+			log("Connecting to CLEXI...");
 		}
 		function closeWebsocketConnection(){
-			if (ws){
-				ws.close();
-			}
+			ClexiJS.close();
 		}
+		
 		function websocketSendPing(){
-			if (ws){
-				var msg = {
-					type: "msg",
-					text: "ping",
-					id: ++msgId,
-					date: Date.now()
-				};
-				// Send the msg object as a JSON-formatted string.
-				ws.send(JSON.stringify(msg));
-			}
+			ClexiJS.send('clexi-broadcaster', {
+				text: "ping"
+			});
 		}
-		function websocketSendToBleBeaconScanner(){
-			if (ws){
-				var msg = {
-					type: "ble-beacon-scanner",
-					data: "ping",
-					id: ++msgId,
-					date: Date.now()
-				};
-				// Send the msg object as a JSON-formatted string.
-				ws.send(JSON.stringify(msg));
-			}
+		function websocketSendStartToBleBeaconScanner(){
+			ClexiJS.send('ble-beacon-scanner', {
+				ctrl: "start"
+			});
+		}
+		function websocketSendStopToBleBeaconScanner(){
+			ClexiJS.send('ble-beacon-scanner', {
+				ctrl: "stop"
+			});
+		}
+		
+		function subscribeToBeaconScanner(){
+			ClexiJS.subscribeTo('ble-beacon-scanner', function(e){
+				log('BLE Beacon event: ' + JSON.stringify(e));
+			}, function(e){
+				log('BLE Beacon response: ' + JSON.stringify(e));
+			}, function(e){
+				log('BLE Beacon error: ' + JSON.stringify(e));
+			});
+		}
+		function subscribeToBroadcaster(){
+			ClexiJS.subscribeTo('clexi-broadcaster', function(e){
+				log('Broadcaster event: ' + JSON.stringify(e));
+			}, function(e){
+				log('Broadcaster response: ' + JSON.stringify(e));
+			}, function(e){
+				log('Broadcaster error: ' + JSON.stringify(e));
+			});
+		}
+		function removeSubscriptions(){
+			ClexiJS.removeSubscription('clexi-broadcaster');
+			ClexiJS.removeSubscription('ble-beacon-scanner');
 		}
 	</script>
 </body>
