@@ -39,7 +39,7 @@ sudo setcap cap_net_raw+eip $(eval readlink -f `which node`)
 
 ### Clexi.js for browsers
 
-Copy latest Clexi.js library from this repository and include it in your page head:
+Copy latest Clexi.js library from this repository and include it in your page head, e.g.:
 ```
 <script type="text/javascript" src="lib/clexi-0.7.0.js" charset="UTF-8"></script>
 ```
@@ -65,3 +65,11 @@ ClexiJS.connect(hostURL, function(e){
 ```
   
 For more examples check the `www` folder of this repository.
+
+## Adding your own extensions
+
+* Check the `xtensions` folder for references (it's pretty simple ;-))
+* Build your own extension and put the file in the same folder
+* Open `settings.json` and add your file to the xtensions array by using the filename without ending, e.g.: my-extension.js -> my-extension
+* Subscribe inside your client app to your extension using the same name
+* Done :-)
