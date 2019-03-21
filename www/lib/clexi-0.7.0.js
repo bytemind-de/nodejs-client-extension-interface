@@ -1,6 +1,8 @@
-/* CLEXI - Client Extension Interface v0.7.0 */
+/* CLEXI - Client Extension Interface v0.9.0 */
 var ClexiJS = (function(){
 	var Clexi = {};
+	
+	Clexi.version = "0.7.0";
 	
 	//Extension subscriptions
 	var subscriptions = {};
@@ -9,6 +11,22 @@ var ClexiJS = (function(){
 	var hostURL;
 	var ws;
 	var msgId = 0;
+
+	var reconnectBaseDelay = 330;
+	var reconnectMaxDelay = 30000;
+	var reconnectTry = 0;
+	var reconnectTimer = undefined;
+	var requestedClose = false;
+	
+	var isConnected = false;
+	Clexi.isConnected = function(){
+		return isConnected;
+	}
+	Clexi.doAutoReconnect = true;
+	
+	Clexi.onLog = undefined;		//set this in your code to get log messages
+	Clexi.onDebug = undefined;
+	Clexi.onError = undefined;
 	
 	Clexi.connect = function(host, onOpen, onClose, onError){
 		//URL
@@ -26,16 +44,25 @@ var ClexiJS = (function(){
 		
 		//Connect
 		ws = new WebSocket(hostURL);
+		requestedClose = false;
+		if (Clexi.onLog) Clexi.onLog('CLEXI connecting ...');
 		
 		//Events:
 		
 		ws.onopen = function(me){
+			reconnectTry = 0;
+			isConnected = true;
+			if (reconnectTimer) clearTimeout(reconnectTimer);
+			if (Clexi.onLog) Clexi.onLog('CLEXI connected');
 			if (onOpen) onOpen(me);
+			//send welcome
+			Clexi.send("welcome", "Client v" + Clexi.version);
 		};
 		
 		ws.onmessage = function(me){
 			//console.log(me);
 			msg = JSON.parse(me.data);
+			if (Clexi.onDebug) Clexi.onDebug('CLEXI received msg of type: ' + msg.type);
 			if (subscriptions[msg.type]){
 				if (msg.data){
 					//Extension event
@@ -47,30 +74,57 @@ var ClexiJS = (function(){
 					//Extension error
 					subscriptions[msg.type].onError(msg.error);
 				}
+			}else if (msg.type == "welcome"){
+				if (Clexi.onLog) Clexi.onLog('CLEXI server says welcome. Info: ' + JSON.stringify(msg.info));
 			}
 		};
 		
 		ws.onerror = function(error){
+			if (Clexi.onError){
+				Clexi.onError("CLEXI error");
+			}
 			if (onError) onError(error);
 		};
 		
 		ws.onclose = function(me){
+			isConnected = false;
+			if (Clexi.onLog) Clexi.onLog('CLEXI closed. Reason: ' + me.code + " - " + me.reason);
 			if (onClose) onClose(me);
+			//was requested close?
+			if (!requestedClose){
+				//try reconnect?
+				if (Clexi.doAutoReconnect){
+					autoReconnect(host, onOpen, onClose, onError);
+				}
+			}else{
+				if (reconnectTimer) clearTimeout(reconnectTimer);
+				reconnectTry = 0;
+			}
 		};
 	}
 	
 	Clexi.close = function(){
-		if (ws){
+		if (reconnectTimer) clearTimeout(reconnectTimer);
+		if (ws && isConnected){
+			requestedClose = true;
 			ws.close();
 		}
 	}
 	
-	function autoReconnect(){
-		//TODO
+	function autoReconnect(host, onOpen, onClose, onError){
+		reconnectTry++;
+		var delay = Math.min(reconnectTry*reconnectTry*reconnectBaseDelay, reconnectMaxDelay);
+		//TODO: we could/should check navigator.onLine here ...
+		reconnectTimer = setTimeout(function(){
+			if (!isConnected){
+				if (Clexi.onLog) Clexi.onLog('CLEXI reconnecting after unexpected close. Try: ' + reconnectTry);
+				Clexi.connect(host, onOpen, onClose, onError);
+			}
+		}, delay);
 	}
 	
 	Clexi.send = function(extensionName, data){
-		if (ws){
+		if (ws && isConnected){
 			var msg = {
 				type: extensionName,
 				data: data,

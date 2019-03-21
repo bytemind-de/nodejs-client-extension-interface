@@ -37,4 +37,31 @@ sudo setcap cap_net_raw+eip $(eval readlink -f `which node`)
   
 ## Client installation
 
-Coming soon ...
+### Clexi.js for browsers
+
+Copy latest Clexi.js library from this repository and include it in your page head:
+```
+<script type="text/javascript" src="lib/clexi-0.7.0.js" charset="UTF-8"></script>
+```
+Make sure your server is running and reachable, then connect like this:
+```
+var hostURL = "wss://raspberrypi.local:8443";
+  
+ClexiJS.subscribeTo('ble-beacon-scanner', function(e){
+	console.log('BLE Beacon event: ' + JSON.stringify(e));
+}, function(e){
+	console.log('BLE Beacon response: ' + JSON.stringify(e));
+}, function(e){
+	console.log('BLE Beacon error: ' + JSON.stringify(e));
+});
+  
+ClexiJS.connect(hostURL, function(e){
+	console.log('connected');
+}, function(e){
+	console.log('closed');
+}, function(err){
+	console.log('error');
+});
+```
+  
+For more examples check the `www` folder of this repository.

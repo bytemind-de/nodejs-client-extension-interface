@@ -7,6 +7,7 @@ const fastify_static = require('fastify-static');
 const fastify_ws = require('fastify-ws');
 
 //Server
+const version = "0.7.0";
 const settings = require('./settings.json');
 const port = settings.port || 8443;
 const hostname = settings.hostname || "localhost";	//default: 127.0.0.1, all: 0.0.0.0
@@ -68,7 +69,7 @@ function loadXtensions(){
 				}
 			);
 		}
-		console.log('Extensions loaded: ' + n);
+		console.log('CLEXI Xtensions loaded: ' + n);
 	}
 }
 
@@ -124,6 +125,15 @@ server.listen(port, hostname, function(err, address){
 					type: msgObj.type,
 					id: msgObj.id
 				}));
+				
+			//Welcome
+			}else if (msgObj.type && msgObj.type == "welcome"){
+				socket.send(JSON.stringify({
+					type: "welcome",
+					info: {
+						version: ("CLEXI Node.js server v" + version)
+					}
+				}));
 			
 			//undefined
 			}else{
@@ -146,3 +156,8 @@ server.listen(port, hostname, function(err, address){
 	//Load extensions
 	loadXtensions();
 });
+
+module.exports = {
+	xtensions: xtensions,
+	server: server
+}

@@ -22,6 +22,9 @@
 	-->
 	<script type="text/javascript" src="lib/clexi-0.7.0.js" charset="UTF-8"></script>
 	<style>
+	body {
+		font-family: Sans-Serif;
+	}
 	</style>
 </head>
 <body>
@@ -29,6 +32,10 @@
 		<h3>Node.js Client Extension Interface - CLEXI.js</h3>
 		<p>Test-Page</p>
 	</div>
+	<div>
+		<label>Host:</label><input id="customHost">
+	</div>
+	<br>
 	<div>
 		<button onclick="connectToWebsocket()">Connect</button>
 		<button onclick="closeWebsocketConnection()">Close</button>
@@ -41,30 +48,44 @@
 	</div>
 	<script>
 		var logOut = document.getElementById('log-out');
+		var customHost = document.getElementById('customHost');
+		var cachedHost = ('sessionStorage' in window)? sessionStorage.getItem('hostURL') : undefined;
+		if (cachedHost) customHost.value = cachedHost;
+		
 		function log(msg){
 			console.log(msg);
 			logOut.innerHTML += (msg + "<br>");
 		}
+		function err(msg){
+			console.error(msg);
+			logOut.innerHTML += ("<span style='color: #f00;'>" + msg + "</span><br>");
+		}
 		
 		//CLEXI Demo
 		
+		ClexiJS.onLog = log;
+		ClexiJS.onDebug = log;
+		ClexiJS.onError = err;
+		
 		function connectToWebsocket(){
-			var hostURL = undefined; 	//auto-choose origin
+			var hostURL = customHost.value || cachedHost; 	//auto-choose origin
+			if ('sessionStorage' in window) sessionStorage.setItem('hostURL', hostURL);
 			ClexiJS.connect(hostURL, function(e){
-				log("CLEXI connected");
+				//log("CLEXI - ready.");
+				
 				//listen to events:
 				subscribeToBeaconScanner();
 				subscribeToBroadcaster();
 				
 			}, function(e){
-				log("CLEXI closed");
+				//log("CLEXI - lost connection.");
 				removeSubscriptions();
 				
 			}, function(err){
-				log("CLEXI error: " + ((typeof err === "object")? JSON.stringify(err) : err));
+				//log("CLEXI - something went wrong.");
 				removeSubscriptions();
 			});
-			log("Connecting to CLEXI...");
+			//log("Connecting to CLEXI...");
 		}
 		function closeWebsocketConnection(){
 			ClexiJS.close();
