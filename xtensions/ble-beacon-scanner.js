@@ -9,6 +9,7 @@ const scanner = new BeaconScanner({'noble': noble});
 BleBeaconScanner = function(onStartCallback, onEventCallback, onErrorCallback){
 	//Controls
 	var doScan = false;
+	var isScanning = false;
 	
 	//Set an Event handler for the Bluetooth service
 	noble.on('stateChange', (state) => {
@@ -34,6 +35,7 @@ BleBeaconScanner = function(onStartCallback, onEventCallback, onErrorCallback){
 	//Start scanning
 	function startScanning(msgId, socket){
 		scanner.startScan().then(() => {
+			isScanning = true;
 			if (onEventCallback){
 				onEventCallback({
 					data: {
@@ -42,6 +44,7 @@ BleBeaconScanner = function(onStartCallback, onEventCallback, onErrorCallback){
 				});
 			}
 		}).catch((error) => {
+			isScanning = false;
 			if (onErrorCallback) onErrorCallback({
 				error: error
 			});
@@ -51,11 +54,17 @@ BleBeaconScanner = function(onStartCallback, onEventCallback, onErrorCallback){
 	//Stop scanning
 	function stopScanning(msgId, socket){
 		scanner.stopScan();
+		isScanning = false;
 		if (onEventCallback) onEventCallback({
 			data: {
 				ctrl: "stopped"
 			}
 		});
+	}
+	
+	//Get scanner state
+	function getScannerState(){
+		return ((isScanning)? {state:"on"} : {state:"off"});
 	}
 	
 	//Input
@@ -66,11 +75,14 @@ BleBeaconScanner = function(onStartCallback, onEventCallback, onErrorCallback){
 		if (req){
 			if (req.ctrl == "start"){
 				startScanning(msg.id, socket);
-				return "starting"; 		//will send an additional 'started' event later
+				return {action:"starting"};		//will send an additional 'started' event later
 				
 			}else if (req.ctrl == "stop"){
 				setTimeout(stopScanning, 300, msg.id, socket);		//... because this method has no promise ...
-				return "stopping";		//will send an additional 'stopped' event later
+				return {action:"stopping"};		//will send an additional 'stopped' event later
+			
+			}else if (req.ctrl == "state"){
+				return getScannerState();		//direct answer
 			}
 		}
 		return "unknown request";

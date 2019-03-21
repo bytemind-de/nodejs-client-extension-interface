@@ -42,6 +42,7 @@
 		<button onclick="websocketSendPing()">Ping CLEXI</button>
 		<button onclick="websocketSendStartToBleBeaconScanner()">Start BLE Beacon Scanner</button>
 		<button onclick="websocketSendStopToBleBeaconScanner()">Stop BLE Beacon Scanner</button>
+		<button onclick="websocketSendStateRequestToBleBeaconScanner()">Get BLE Beacon Scanner State</button>
 	</div>
 	<div id="log-out">
 		<p>Client log:</p>
@@ -104,6 +105,11 @@
 		function websocketSendStopToBleBeaconScanner(){
 			ClexiJS.send('ble-beacon-scanner', {
 				ctrl: "stop"
+			});
+		}
+		function websocketSendStateRequestToBleBeaconScanner(){
+			ClexiJS.send('ble-beacon-scanner', {
+				ctrl: "state"
 			});
 		}
 		

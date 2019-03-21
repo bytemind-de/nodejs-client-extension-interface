@@ -72,6 +72,13 @@ function loadXtensions(){
 		console.log('CLEXI Xtensions loaded: ' + n);
 	}
 }
+function getXtensionsInfo(){
+	var info = {};
+	Object.keys(xtensions).forEach(function(name) {
+		info[name] = { active: true };		//TODO: one could add interface information here for each xtension
+	});
+	return info;
+}
 
 //Broadcast to receiver or all
 function broadcast(data){
@@ -131,7 +138,8 @@ server.listen(port, hostname, function(err, address){
 				socket.send(JSON.stringify({
 					type: "welcome",
 					info: {
-						version: ("CLEXI Node.js server v" + version)
+						version: ("CLEXI Node.js server v" + version),
+						xtensions: getXtensionsInfo()
 					}
 				}));
 			

@@ -57,6 +57,12 @@ ClexiJS.subscribeTo('ble-beacon-scanner', function(e){
   
 ClexiJS.connect(hostURL, function(e){
 	console.log('connected');
+	
+	//start BLE beacon scanner
+	ClexiJS.send('ble-beacon-scanner', {
+		ctrl: "start"
+	});
+	
 }, function(e){
 	console.log('closed');
 }, function(err){

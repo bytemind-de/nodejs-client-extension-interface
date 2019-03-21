@@ -28,6 +28,8 @@ var ClexiJS = (function(){
 	Clexi.onDebug = undefined;
 	Clexi.onError = undefined;
 	
+	Clexi.availableXtensions = {};
+	
 	Clexi.connect = function(host, onOpen, onClose, onError){
 		//URL
 		if (host){
@@ -75,6 +77,7 @@ var ClexiJS = (function(){
 					subscriptions[msg.type].onError(msg.error);
 				}
 			}else if (msg.type == "welcome"){
+				if (msg.info && msg.info.xtensions) Clexi.availableXtensions = msg.info.xtensions;
 				if (Clexi.onLog) Clexi.onLog('CLEXI server says welcome. Info: ' + JSON.stringify(msg.info));
 			}
 		};
@@ -88,7 +91,7 @@ var ClexiJS = (function(){
 		
 		ws.onclose = function(me){
 			isConnected = false;
-			if (Clexi.onLog) Clexi.onLog('CLEXI closed. Reason: ' + me.code + " - " + me.reason);
+			if (Clexi.onLog) Clexi.onLog('CLEXI closed. Reason: ' + me.code + " " + me.reason);
 			if (onClose) onClose(me);
 			//was requested close?
 			if (!requestedClose){
