@@ -34,21 +34,23 @@ BleBeaconScanner = function(onStartCallback, onEventCallback, onErrorCallback){
 
 	//Start scanning
 	function startScanning(msgId, socket){
-		scanner.startScan().then(() => {
-			isScanning = true;
-			if (onEventCallback){
-				onEventCallback({
-					data: {
-						ctrl: "started"
-					}
+		if (!isScanning){
+			scanner.startScan().then(() => {
+				isScanning = true;
+				if (onEventCallback){
+					onEventCallback({
+						data: {
+							ctrl: "started"
+						}
+					});
+				}
+			}).catch((error) => {
+				isScanning = false;
+				if (onErrorCallback) onErrorCallback({
+					error: error
 				});
-			}
-		}).catch((error) => {
-			isScanning = false;
-			if (onErrorCallback) onErrorCallback({
-				error: error
 			});
-		});
+		}
 	}
 	
 	//Stop scanning
@@ -74,8 +76,12 @@ BleBeaconScanner = function(onStartCallback, onEventCallback, onErrorCallback){
 		//Start/Stop requests
 		if (req){
 			if (req.ctrl == "start"){
-				startScanning(msg.id, socket);
-				return {action:"starting"};		//will send an additional 'started' event later
+				if (!isScanning){
+					startScanning(msg.id, socket);
+					return {action:"starting"};		//will send an additional 'started' event later
+				}else{
+					return {action:"no change"};
+				}
 				
 			}else if (req.ctrl == "stop"){
 				setTimeout(stopScanning, 300, msg.id, socket);		//... because this method has no promise ...
