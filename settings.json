@@ -6,6 +6,7 @@
 		"level": "error"
 	},
 	"xtensions": [
+		"clexi-broadcaster",
 		"ble-beacon-scanner"
 	]
 }
