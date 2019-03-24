@@ -32,10 +32,11 @@ Requirements:
 * Some Linux packages: `sudo apt-get install bluetooth bluez libbluetooth-dev libudev-dev libnss3-tools libcap2-bin openssl`
 * SSL certificates for HTTPS (you can use the included script to generate self-signed)
   
-Clone the repository to the folder 'clexi' and enter that folder:  
+Clone the repository to the folder 'clexi', enter that folder and run `npm install`:  
 ```
 git clone https://github.com/bytemind-de/nodejs-client-extension-interface.git clexi
 cd clexi
+npm install
 ```  
 Decide which hostname you want to use for your server. Default is `localhost` but I usually prefer `raspberrypi.local` (default hostname of RPi) to make CLEXI available to all devices in the network.  
 You can change your hostname via the raspi-config tool.
