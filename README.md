@@ -3,7 +3,7 @@ Node.js CLEXI is a lightweight **cl**ient **ex**tension **i**nterface that enhan
 
 ## Using as node module
 
-Install via `npm install clexi` then build your own server like this:
+Install via `npm install clexi` (tested under Linux, please see requirements section below) then build your own server like this:
 ```
 'use strict'
 const settings = {
@@ -105,3 +105,7 @@ For more examples check the `www` folder of this repository.
 * Open `settings.json` and add your file to the xtensions array by using the filename without ending, e.g.: my-extension.js -> my-extension
 * Subscribe inside your client app to your extension using the same name
 * Done :-)
+
+## Version history
+
+See [changelog](CHANGELOG.md)
