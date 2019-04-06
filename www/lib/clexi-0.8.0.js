@@ -18,6 +18,7 @@ var ClexiJS = (function(){
 	var reconnectTry = 0;
 	var reconnectTimer = undefined;
 	var requestedClose = false;
+	var readyToAcceptEvents = false; 	//the welcome event will set this to true and allow subscriptions (if data is correct)
 	
 	var isConnected = false;
 	Clexi.isConnected = function(){
@@ -79,6 +80,7 @@ var ClexiJS = (function(){
 		//Connect
 		ws = new WebSocket(hostURL);
 		requestedClose = false;
+		readyToAcceptEvents = false;
 		if (Clexi.onLog) Clexi.onLog('CLEXI connecting ...');
 		if (onConnecting) onConnecting();
 		
@@ -100,7 +102,7 @@ var ClexiJS = (function(){
 			if (Clexi.onDebug) Clexi.onDebug('CLEXI received msg of type: ' + msg.type);
 			
 			//check xtensions first
-			if (subscriptions[msg.type]){
+			if (readyToAcceptEvents && subscriptions[msg.type]){
 				if (msg.data){
 					//Extension event
 					subscriptions[msg.type].onEvent(msg.data);
@@ -119,6 +121,8 @@ var ClexiJS = (function(){
 				//check server ID
 				if (Clexi.serverId && (Clexi.serverId != msg.info.id)){
 					Clexi.close();
+				}else{
+					readyToAcceptEvents = true;
 				}
 			}
 		};
