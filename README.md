@@ -1,9 +1,10 @@
 # Node.js CLEXI
-Node.js CLEXI is a lightweight **cl**ient **ex**tension **i**nterface that enhances connected clients with functions of the underlying operating system using a duplex, realtime Websocket connection (e.g. Bluetooth beacon scanning).
+Node.js CLEXI is a lightweight **cl**ient **ex**tension **i**nterface that enhances connected clients with functions of the underlying operating system using a duplex, realtime Websocket connection.
 Current extensions include:
 * clexi-broadcaster - a simple Websocket message broadcaster
 * clexi-http-events - receives events at the 'event' endpoint and broadcasts them via the Websocket connection
 * ble-beacon-scanner - scans for Bluetooth BLE beacons and broadcasts their data
+CLEXI works as a web-server as well and can host the client application if required (e.g. just put the files in the www folder).
 
 ## Using as node module
 
@@ -30,7 +31,7 @@ const settings = {
 ```
 See client and extensions section below to get more info.
 
-## Using the clexi-http-events extension
+## Using the 'clexi-http-events' extension
 As noted above this extension receives events at the 'event' endpoint and broadcasts them via the Websocket connection. The 'event' endpoint accepts HTTP GET and POST requests in the following format (curl example):
 ```
 #POST example
@@ -83,7 +84,7 @@ The `sudo` command is required for Bluetooth control. If you want to run the ser
 ```
 sudo setcap cap_net_raw+eip $(eval readlink -f `which node`)
 ```  
-Finally to check if everything worked out fine visit the test-page in your browser, e.g. `https://raspberrypi.local:8443/index.html` (depending on your settings). When using self-signed SSL certificate this helps as well to tell the browser to trus them.
+Finally to check if everything worked out fine visit the test-page in your browser, e.g. `https://raspberrypi.local:8443/index.html` (depending on your settings). When using a self-signed SSL certificate this also helps to tell the browser to trust them (usually required once).
   
 ## Client installation
 
@@ -96,7 +97,7 @@ Copy latest Clexi.js library from this repository and include it in your page he
 Make sure your server is running and reachable, then connect like this:
 ```
 var hostURL = "wss://raspberrypi.local:8443";
-ClexiJS.serverId = 'my-clexi-server-123';
+ClexiJS.serverId = 'my-clexi-server-123'; 	//must be empty or identical to 'id' entry in server settings
   
 ClexiJS.subscribeTo('ble-beacon-scanner', function(e){
 	console.log('BLE Beacon event: ' + JSON.stringify(e));
