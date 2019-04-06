@@ -22,7 +22,7 @@ BleBeaconScanner = function(onStartCallback, onEventCallback, onErrorCallback){
 		}
 	});
 
-	//Set an Event handler for becons
+	//Set an Event handler for beacons
 	scanner.onadvertisement = (ad) => {
 		//console.log(JSON.stringify(ad, null, '  '));
 		if (onEventCallback) onEventCallback({

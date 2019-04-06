@@ -1,6 +1,6 @@
 {
   "name": "clexi",
-  "version": "0.7.1",
+  "version": "0.8.0",
   "description": "Node.js CLEXI is a lightweight client extension interface that enhances connected clients with functions of the underlying operating system using a duplex, realtime Websocket connection.",
   "main": "server.js",
   "scripts": {
