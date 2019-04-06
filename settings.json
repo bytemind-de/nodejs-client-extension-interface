@@ -1,5 +1,6 @@
 {
 	"hostname": "raspberrypi.local",
+	"id": "clexi-123",
 	"port": 8443,
 	"ssl": true,
 	"logger": { 
@@ -7,6 +8,7 @@
 	},
 	"xtensions": [
 		"clexi-broadcaster",
+		"clexi-http-events",
 		"ble-beacon-scanner"
 	]
 }

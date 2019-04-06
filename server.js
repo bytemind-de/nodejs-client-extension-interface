@@ -7,7 +7,7 @@ const fastify_static = require('fastify-static');
 const fastify_ws = require('fastify-ws');
 
 //Server
-const version = "0.7.0";
+const version = "0.8.0";
 const settings = require('./settings.json');
 
 var Clexi = function(customSettings){
@@ -17,6 +17,7 @@ var Clexi = function(customSettings){
 	
 	var port = customSettings.port || settings.port || 8443;
 	var hostname = customSettings.hostname || settings.hostname || "localhost";	//default: 127.0.0.1, all: 0.0.0.0
+	var serverId = customSettings.id || settings.id || "clexi-123";
 	
 	var sslCertPath = customSettings.sslCertPath || path.join(__dirname, "ssl");
 	var wwwPath = customSettings.wwwPath || path.join(__dirname, "www");
@@ -133,6 +134,36 @@ var Clexi = function(customSettings){
 			});
 		}
 	}
+	
+	//Server routes:
+	
+	//Ping
+	server.get('/ping', function(request, reply) {
+		reply.send({ 
+			id: serverId,
+			v: version
+		});
+	});
+	
+	//CLEXI HTTP-Events
+	server.get('/event/:name', function(request, reply){
+		sendHttpEventToXtension(request, reply, "GET");
+	});
+	server.post('/event/:name', function(request, reply){
+		sendHttpEventToXtension(request, reply, "POST");
+	});
+	function sendHttpEventToXtension(request, reply, method){
+		if (xtensions["clexi-http-events"]){
+			//the http-event extension is active
+			xtensions["clexi-http-events"].event(method, request);
+			reply.code(204);
+			reply.send();
+		}else{
+			//no http-event extension support
+			reply.code(404);
+			reply.send();
+		}
+	}
 
 	//Run the server
 	ClexiServer.start = function(){
@@ -141,8 +172,8 @@ var Clexi = function(customSettings){
 				server.log.error(err);
 				process.exit(1);
 			}
-			console.log(`Server running at: ${address}`);
-			console.log(`Hostname: ${hostname} - SSL: ${settings.ssl}`);
+			console.log(`Server with ID '${serverId}' running at: ${address}`);
+			console.log(`Hostname: ${hostname} - SSL: ${useSsl}`);
 			server.log.info(`Server running at ${address}`);
 			
 			//Websocket interface
@@ -157,17 +188,20 @@ var Clexi = function(customSettings){
 					if (msgObj.type && xtensions[msgObj.type]){
 						server.log.info('Calling xtensions: ' + msgObj.type);
 						let response = xtensions[msgObj.type].input(msgObj, socket);
-						socket.send(JSON.stringify({
-							response: response,
-							type: msgObj.type,
-							id: msgObj.id
-						}));
+						if (response){
+							socket.send(JSON.stringify({
+								response: response,
+								type: msgObj.type,
+								id: msgObj.id
+							}));
+						}
 						
 					//Welcome
 					}else if (msgObj.type && msgObj.type == "welcome"){
 						socket.send(JSON.stringify({
 							type: "welcome",
 							info: {
+								id: serverId,
 								version: ("CLEXI Node.js server v" + version),
 								xtensions: getXtensionsInfo()
 							}

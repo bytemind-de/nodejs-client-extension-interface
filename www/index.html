@@ -20,7 +20,7 @@
 	<script type="text/javascript" src="js/jquery-3.1.1.min.js" charset="UTF-8"></script>
 	<link rel="stylesheet" href="css/main.css">
 	-->
-	<script type="text/javascript" src="lib/clexi-0.7.1.js" charset="UTF-8"></script>
+	<script type="text/javascript" src="lib/clexi-0.8.0.js" charset="UTF-8"></script>
 	<style>
 	body {
 		font-family: Sans-Serif;
@@ -33,13 +33,16 @@
 		<p>Test-Page</p>
 	</div>
 	<div>
-		<label>Host:</label><input id="customHost">
+		<label>Host:</label><input id="customHost"><br>
+		<label>Server ID:</label><input id="customServerId">
 	</div>
 	<br>
 	<div>
+		<button onclick="serverPing()">Ping CLEXI server</button>
 		<button onclick="connectToWebsocket()">Connect</button>
 		<button onclick="closeWebsocketConnection()">Close</button>
-		<button onclick="websocketSendPing()">Ping CLEXI</button>
+		<button onclick="websocketSendPing()">Broadcast Ping</button>
+		<button onclick="httpTestEvent()">Send Test HTTP-Event</button>
 		<button onclick="websocketSendStartToBleBeaconScanner()">Start BLE Beacon Scanner</button>
 		<button onclick="websocketSendStopToBleBeaconScanner()">Stop BLE Beacon Scanner</button>
 		<button onclick="websocketSendStateRequestToBleBeaconScanner()">Get BLE Beacon Scanner State</button>
@@ -50,6 +53,7 @@
 	<script>
 		var logOut = document.getElementById('log-out');
 		var customHost = document.getElementById('customHost');
+		var customServerId = document.getElementById('customServerId');
 		var cachedHost = ('sessionStorage' in window)? sessionStorage.getItem('hostURL') : undefined;
 		if (cachedHost) customHost.value = cachedHost;
 		
@@ -68,15 +72,20 @@
 		ClexiJS.onDebug = log;
 		ClexiJS.onError = err;
 		
+		ClexiJS.serverId = "clexi-1234";
+		customServerId.value = ClexiJS.serverId;
+		
 		function connectToWebsocket(){
-			var hostURL = customHost.value || cachedHost; 	//auto-choose origin
+			ClexiJS.serverId = customServerId.value;
+			var hostURL = customHost.value || cachedHost || ""; 	//auto-choose origin
 			if ('sessionStorage' in window) sessionStorage.setItem('hostURL', hostURL);
+			
+			//NOTE: something to try as well: ClexiJS.pingAndConnect(host, onPingOrIdError, onOpen, onClose, onError, onConnecting);
 			ClexiJS.connect(hostURL, function(e){
 				//log("CLEXI - ready.");
 				
 				//listen to events:
-				subscribeToBeaconScanner();
-				subscribeToBroadcaster();
+				subscribe();
 				
 			}, function(e){
 				//log("CLEXI - lost connection.");
@@ -90,6 +99,33 @@
 		}
 		function closeWebsocketConnection(){
 			ClexiJS.close();
+		}
+		
+		function serverPing(){
+			ClexiJS.serverId = customServerId.value;
+			var hostURL = customHost.value || cachedHost || ""; 	//auto-choose origin
+			if (!hostURL) hostURL = location.origin;
+			else hostURL = hostURL.replace(/^wss/, 'https').replace(/^ws/, 'http');
+			ClexiJS.httpRequest("GET", hostURL + "/ping", function(data){
+				//Success
+				log("HTTP GET result to 'ping' endpoint: " + data);
+			}, function(){
+				//Error
+				err({msg:"CLEXI connection failed! Server not reached."});
+			});
+		}
+		function httpTestEvent(){
+			var hostURL = customHost.value || cachedHost || ""; 	//auto-choose origin
+			if (!hostURL) hostURL = location.origin;
+			else hostURL = hostURL.replace(/^wss/, 'https').replace(/^ws/, 'http');
+			
+			//Test event via HTTP GET. HTTP POST is possible too.
+			var eventName = "testEvent";
+			var eventData = "num=42";
+			ClexiJS.httpRequest("GET", hostURL + "/event/" + eventName + "?" + eventData, function(data){}, function(){
+				//Error
+				err({msg:"CLEXI connection failed! Server not reached."});
+			});
 		}
 		
 		function websocketSendPing(){
@@ -131,8 +167,23 @@
 				log('Broadcaster error: ' + JSON.stringify(e));
 			});
 		}
+		function subscribeToHttpEvents(){
+			ClexiJS.subscribeTo('clexi-http-events', function(e){
+				log('HTTP event: ' + JSON.stringify(e));
+			}, function(e){
+				log('HTTP response: ' + JSON.stringify(e));
+			}, function(e){
+				log('HTTP error: ' + JSON.stringify(e));
+			});
+		}
+		function subscribe(){
+			subscribeToBeaconScanner();
+			subscribeToBroadcaster();
+			subscribeToHttpEvents();
+		}
 		function removeSubscriptions(){
 			ClexiJS.removeSubscription('clexi-broadcaster');
+			ClexiJS.removeSubscription('clexi-http-events');
 			ClexiJS.removeSubscription('ble-beacon-scanner');
 		}
 	</script>
