@@ -1,2 +1,2 @@
 #!/bin/bash
-nohup node server.js &> log.out&
+nohup node --title=clexi-server.js server.js &> log.out&
