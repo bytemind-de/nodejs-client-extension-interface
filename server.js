@@ -7,7 +7,7 @@ const fastify_static = require('fastify-static');
 const fastify_ws = require('fastify-ws');
 
 //Server
-const version = "0.8.0";
+const version = "0.8.1";
 const settings = require('./settings.json');
 
 var Clexi = function(customSettings){
@@ -18,6 +18,7 @@ var Clexi = function(customSettings){
 	var port = customSettings.port || settings.port || 8443;
 	var hostname = customSettings.hostname || settings.hostname || "localhost";	//default: 127.0.0.1, all: 0.0.0.0
 	var serverId = customSettings.id || settings.id || "clexi-123";
+	var idIsPassword = customSettings.idIsPassword || settings.idIsPassword || false;
 	
 	var sslCertPath = customSettings.sslCertPath || path.join(__dirname, "ssl");
 	var wwwPath = customSettings.wwwPath || path.join(__dirname, "www");
@@ -116,19 +117,29 @@ var Clexi = function(customSettings){
 			//single receiver?
 			var client = data.receiver;
 			delete data.receiver; 	//remove object before sending
-			if (typeof data === "object"){
-				client.send(JSON.stringify(data));
+			if (!idIsPassword || (idIsPassword && client.authState)){
+				if (typeof data === "object"){
+					client.send(JSON.stringify(data));
+				}else{
+					client.send(data);
+				}
 			}else{
-				client.send(data);
+				server.log.error("Tried to broadcast to unauthorized client. Client should be disconnected already!");
+				client.terminate();
 			}
 		}else{
 			//broadcast to all
 			server.ws.clients.forEach(function each(client){
 				if (client.readyState === 1) {		//WebSocket.OPEN should be 1
-					if (typeof data === "object"){
-						client.send(JSON.stringify(data));
+					if (!idIsPassword || (idIsPassword && client.authState)){
+						if (typeof data === "object"){
+							client.send(JSON.stringify(data));
+						}else{
+							client.send(data);
+						}
 					}else{
-						client.send(data);
+						server.log.error("Tried to broadcast to unauthorized client. Client should be disconnected already!");
+						client.terminate();
 					}
 				}
 			});
@@ -139,18 +150,40 @@ var Clexi = function(customSettings){
 	
 	//Ping
 	server.get('/ping', function(request, reply) {
-		reply.send({ 
-			id: serverId,
-			v: version
-		});
+		var d = {
+			v: version,
+			id: serverId
+		}
+		if (idIsPassword){
+			d.id = "[SECRET]";
+		}
+		reply.send(d);
 	});
 	
 	//CLEXI HTTP-Events
 	server.get('/event/:name', function(request, reply){
-		sendHttpEventToXtension(request, reply, "GET");
+		if (idIsPassword){
+			if (request.headers['clexi-id'] == serverId){
+				sendHttpEventToXtension(request, reply, "GET");
+			}else{
+				reply.code(401);
+				reply.send();
+			}
+		}else{
+			sendHttpEventToXtension(request, reply, "GET");
+		}
 	});
 	server.post('/event/:name', function(request, reply){
-		sendHttpEventToXtension(request, reply, "POST");
+		if (idIsPassword){
+			if (request.headers['clexi-id'] == serverId){
+				sendHttpEventToXtension(request, reply, "POST");
+			}else{
+				reply.code(401);
+				reply.send();
+			}
+		}else{
+			sendHttpEventToXtension(request, reply, "POST");
+		}
 	});
 	function sendHttpEventToXtension(request, reply, method){
 		if (xtensions["clexi-http-events"]){
@@ -177,7 +210,7 @@ var Clexi = function(customSettings){
 			server.log.info(`Server running at ${address}`);
 			
 			//Websocket interface
-			server.ws.on('connection', function(socket){
+			server.ws.on('connection', function(socket, request){
 				server.log.info('Client connected.');
 				
 				//CLIENT INPUT
@@ -198,14 +231,31 @@ var Clexi = function(customSettings){
 						
 					//Welcome
 					}else if (msgObj.type && msgObj.type == "welcome"){
-						socket.send(JSON.stringify({
-							type: "welcome",
-							info: {
-								id: serverId,
-								version: ("CLEXI Node.js server v" + version),
-								xtensions: getXtensionsInfo()
-							}
-						}));
+						//check server ID
+						if (msgObj.data && msgObj.data.server_id && msgObj.data.server_id == serverId){
+							socket.authState = true;
+						}
+						if (!idIsPassword || (idIsPassword && socket.authState)){
+							socket.send(JSON.stringify({
+								type: "welcome",
+								code: 200,
+								info: {
+									id: serverId,
+									version: ("CLEXI Node.js server v" + version),
+									xtensions: getXtensionsInfo()
+								}
+							}));
+						}else{
+							socket.send(JSON.stringify({
+								type: "welcome",
+								code: 401,
+								info: {
+									msg: "not authorized",
+									version: ("CLEXI Node.js server v" + version)
+								}
+							}));
+							//socket.terminate();	//the client should gracefully disconnect O_O
+						}
 					
 					//undefined
 					}else{

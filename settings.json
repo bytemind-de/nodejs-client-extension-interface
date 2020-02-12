@@ -1,6 +1,7 @@
 {
 	"hostname": "raspberrypi.local",
 	"id": "clexi-123",
+	"idIsPassword": false,
 	"port": 8443,
 	"ssl": true,
 	"logger": { 

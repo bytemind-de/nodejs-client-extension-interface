@@ -1,5 +1,10 @@
 # Changelog for CLEXI - Client Extension Interface
 
+## v0.8.1
+* Added settings option "idIsPassword" and implemented server checks to validated ID during welcome event
+* Improved client lib to handle new authentication process and added new method to call 'http-events' endpoint
+* Improved 'run' script and added 'shutdown' and 'status' scripts (Linux)
+
 ## v0.8.0
 * Added 'clexi-http-events' extension and 'event' server endpoint
 * Added server ID and 'ping' endpoint to request it (can be used to identify a certain server)
