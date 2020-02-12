@@ -20,7 +20,7 @@
 	<script type="text/javascript" src="js/jquery-3.1.1.min.js" charset="UTF-8"></script>
 	<link rel="stylesheet" href="css/main.css">
 	-->
-	<script type="text/javascript" src="lib/clexi-0.8.0.js" charset="UTF-8"></script>
+	<script type="text/javascript" src="lib/clexi-0.8.1.js" charset="UTF-8"></script>
 	<style>
 	body {
 		font-family: Sans-Serif;
@@ -61,9 +61,13 @@
 			console.log(msg);
 			logOut.innerHTML += (msg + "<br>");
 		}
-		function err(msg){
-			console.error(msg);
-			logOut.innerHTML += ("<span style='color: #f00;'>" + msg + "</span><br>");
+		function err(e){
+			console.error(e);
+			if (e && e.msg){
+				logOut.innerHTML += ("<span style='color: #f00;'>" + e.msg + "</span><br>");
+			}else{
+				logOut.innerHTML += ("<span style='color: #f00;'>" + e + "</span><br>");
+			}
 		}
 		
 		//CLEXI Demo
@@ -72,7 +76,7 @@
 		ClexiJS.onDebug = log;
 		ClexiJS.onError = err;
 		
-		ClexiJS.serverId = "clexi-1234";
+		ClexiJS.serverId = "clexi-123";
 		customServerId.value = ClexiJS.serverId;
 		
 		function connectToWebsocket(){
@@ -119,12 +123,14 @@
 			if (!hostURL) hostURL = location.origin;
 			else hostURL = hostURL.replace(/^wss/, 'https').replace(/^ws/, 'http');
 			
-			//Test event via HTTP GET. HTTP POST is possible too.
+			//Test event via HTTP GET. HTTP POST is possible too, but not yet with this client method (v0.8.1, build your own POST).
 			var eventName = "testEvent";
-			var eventData = "num=42";
-			ClexiJS.httpRequest("GET", hostURL + "/event/" + eventName + "?" + eventData, function(data){}, function(){
+			var eventData = {
+				"num": 42
+			};
+			ClexiJS.sendHttpEvent(hostURL, ClexiJS.serverId, eventName, eventData, function(data){}, function(){
 				//Error
-				err({msg:"CLEXI connection failed! Server not reached."});
+				err({msg:"CLEXI connection failed! Server not reached or not authorized."});
 			});
 		}
 		
