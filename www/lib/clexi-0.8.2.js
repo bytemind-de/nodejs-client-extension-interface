@@ -2,7 +2,7 @@
 var ClexiJS = (function(){
 	var Clexi = {};
 	
-	Clexi.version = "0.8.1";
+	Clexi.version = "0.8.2";
 	Clexi.serverId = "";		//if you set this the client will check the server ID on welcome event and close connection if not identical
 	
 	//Extension subscriptions
@@ -63,7 +63,7 @@ var ClexiJS = (function(){
 		});
 	}
 	
-	Clexi.connect = function(host, onOpen, onClose, onError, onConnecting){
+	Clexi.connect = function(host, onOpen, onClose, onError, onConnecting, onWelcome){
 		//URL
 		if (host){
 			//given URL
@@ -142,6 +142,7 @@ var ClexiJS = (function(){
 					Clexi.close();
 				}else{
 					readyToAcceptEvents = true;
+					if (onWelcome) onWelcome(msg.info);
 				}
 			}
 		};
