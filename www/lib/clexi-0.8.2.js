@@ -133,10 +133,10 @@ var ClexiJS = (function(){
 				if (msg.info && msg.info.xtensions) Clexi.availableXtensions = msg.info.xtensions;
 				if (Clexi.onLog) Clexi.onLog('CLEXI server says welcome. Info: ' + JSON.stringify(msg.info));
 				if (msg.code && msg.code == 401){
-					//server requires correct ID for authentication
+					//server requires correct ID for authentication - This is "the" security feature (see comment below)
 					Clexi.close();
 				//check server ID
-				}else if (Clexi.serverId && (Clexi.serverId != msg.info.id)){
+				}else if (Clexi.serverId && msg.info.id && (Clexi.serverId != msg.info.id)){
 					//NOTE: the server might not necessarily refuse connections with wrong ID (depends on settings), but we will if ID is given.
 					//Obviously this is NOT a security feature but a server ID filter ;-)
 					Clexi.close();

@@ -235,12 +235,21 @@ var Clexi = function(customSettings){
 						if (msgObj.data && msgObj.data.server_id && msgObj.data.server_id == serverId){
 							socket.authState = true;
 						}
-						if (!idIsPassword || (idIsPassword && socket.authState)){
+						if (!idIsPassword){
 							socket.send(JSON.stringify({
 								type: "welcome",
 								code: 200,
 								info: {
-									id: (idIsPassword? "[SECRET]" : serverId),
+									id: serverId,
+									version: ("CLEXI Node.js server v" + version),
+									xtensions: getXtensionsInfo()
+								}
+							}));
+						}else if (idIsPassword && socket.authState){
+							socket.send(JSON.stringify({
+								type: "welcome",
+								code: 200,
+								info: {
 									version: ("CLEXI Node.js server v" + version),
 									xtensions: getXtensionsInfo()
 								}
