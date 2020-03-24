@@ -93,7 +93,7 @@ Finally to check if everything worked out fine visit the test-page in your brows
 
 Copy latest Clexi.js library from this repository and include it in your page head, e.g.:
 ```
-<script type="text/javascript" src="lib/clexi-0.8.0.js" charset="UTF-8"></script>
+<script type="text/javascript" src="lib/clexi-0.8.2.js" charset="UTF-8"></script>
 ```
 Make sure your server is running and reachable, then connect like this:
 ```
@@ -109,17 +109,18 @@ ClexiJS.subscribeTo('ble-beacon-scanner', function(e){
 });
   
 ClexiJS.connect(hostURL, function(e){
-	console.log('connected');
+	console.log('connected');	
+}, function(e){
+	console.log('closed');
+}, function(err){
+	console.log('error');
+}, function(welcomeInfo){
+	console.log('welcome');
 	
 	//start BLE beacon scanner
 	ClexiJS.send('ble-beacon-scanner', {
 		ctrl: "start"
 	});
-	
-}, function(e){
-	console.log('closed');
-}, function(err){
-	console.log('error');
 });
 ```
   
