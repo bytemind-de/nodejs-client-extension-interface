@@ -33,7 +33,7 @@ var ClexiJS = (function(){
 	Clexi.onDebug = undefined;
 	Clexi.onError = undefined;
 	
-	Clexi.availableXtensions = {};
+	Clexi.availableXtensions = {}; 	//TODO: we should update this somehow (will only update once at welcome event)
 	
 	Clexi.pingAndConnect = function(host, onPingOrIdError, onOpen, onClose, onError, onConnecting){
 		var url;
