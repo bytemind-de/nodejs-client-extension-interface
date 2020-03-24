@@ -88,9 +88,6 @@
 			ClexiJS.connect(hostURL, function(e){
 				//log("CLEXI - ready.");
 				
-				//listen to events:
-				subscribe();
-				
 			}, function(e){
 				//log("CLEXI - lost connection.");
 				removeSubscriptions();
@@ -98,6 +95,12 @@
 			}, function(err){
 				//log("CLEXI - something went wrong.");
 				removeSubscriptions();
+			
+			}, function(welcomeInfo){
+				//log("CLEXI - welcome event.");
+				
+				//subscribe to extension events:
+				subscribe();
 			});
 			//log("Connecting to CLEXI...");
 		}
