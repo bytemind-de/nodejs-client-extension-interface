@@ -1,7 +1,12 @@
 # Changelog for CLEXI - Client Extension Interface
 
+## v0.8.2
+* Added 'runtime-commands' extension and folder (beta, deactivated by default)
+* Updated client lib to support 'onWelcome' event as Clexi.connect callback
+* If 'idIsPassword' is 'true' the server will no longer show its ID at the welcome event
+
 ## v0.8.1
-* Added settings option "idIsPassword" and implemented server checks to validated ID during welcome event
+* Added settings option 'idIsPassword' and implemented server checks to validated ID during welcome event
 * Improved client lib to handle new authentication process and added new method to call 'http-events' endpoint
 * Improved 'run' script and added 'shutdown' and 'status' scripts (Linux)
 
