@@ -2,7 +2,7 @@ const exec = require('child_process').exec;
 const fs = require('fs');
 
 /**
-* An extension that supports certain runtime commands like 'reboot' and 'shutdown'.
+* An extension that supports certain runtime commands like 'reboot', 'shutdown' and custom calls.
 */	
 RuntimeCommands = function(onStartCallback, onEventCallback, onErrorCallback){
 	//Commands accessible by this extension
