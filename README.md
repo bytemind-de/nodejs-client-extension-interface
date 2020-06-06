@@ -4,6 +4,7 @@ Current extensions include:
 * clexi-broadcaster - a simple Websocket message broadcaster
 * clexi-http-events - receives events at the 'event' endpoint and broadcasts them via the Websocket connection
 * ble-beacon-scanner - scans for Bluetooth BLE beacons and broadcasts their data
+* runtime-commands - (deactivated by default) execute runtime commands
 
 CLEXI works as a web-server as well and can host the client application if required (e.g. just put the files in the www folder).
 
