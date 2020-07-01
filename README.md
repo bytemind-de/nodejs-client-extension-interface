@@ -115,6 +115,8 @@ ClexiJS.connect(hostURL, function(e){
 	console.log('closed');
 }, function(err){
 	console.log('error');
+}, function(){
+	console.log('connecting');
 }, function(welcomeInfo){
 	console.log('welcome');
 	
