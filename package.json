@@ -1,6 +1,6 @@
 {
   "name": "clexi",
-  "version": "0.8.2",
+  "version": "0.9.0",
   "description": "Node.js CLEXI is a lightweight client extension interface that enhances connected clients with functions of the underlying operating system using a duplex, realtime Websocket connection.",
   "main": "server.js",
   "scripts": {
@@ -27,9 +27,9 @@
   },
   "homepage": "https://github.com/bytemind-de/nodejs-client-extension-interface#readme",
   "dependencies": {
-    "fastify": "^2.1.0",
-    "fastify-static": "^2.3.4",
-    "fastify-ws": "^1.0.1",
-    "node-beacon-scanner": "github:bytemind-de/node-beacon-scanner"
+    "node-beacon-scanner": "^0.2.2",
+    "fastify": "^2.15.3",
+    "fastify-static": "^2.7.0",
+    "fastify-ws": "^1.1.2"
   }
 }

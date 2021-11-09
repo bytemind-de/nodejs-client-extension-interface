@@ -109,12 +109,16 @@ ClexiJS.subscribeTo('ble-beacon-scanner', function(e){
 	console.log('BLE Beacon error: ' + JSON.stringify(e));
 });
   
-ClexiJS.connect(hostURL, function(e){
+ClexiJS.pingAndConnect(hostURL, function(err){
+	console.log('server ping failed', err.msg);
+}, function(e){
 	console.log('connected');	
 }, function(e){
 	console.log('closed');
 }, function(err){
-	console.log('error');
+	console.log('error', err.message);
+}, function(){
+	console.log('connecting');
 }, function(welcomeInfo){
 	console.log('welcome');
 	
