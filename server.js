@@ -7,7 +7,7 @@ const fastify_static = require('fastify-static');
 const fastify_ws = require('fastify-ws');
 
 //Server
-const version = "0.8.2";
+const version = "0.9.0";
 const settings = require('./settings.json');
 
 var Clexi = function(customSettings){
