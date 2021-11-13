@@ -51,7 +51,8 @@ var Clexi = function(customSettings){
 
 	//Plugins
 	server.register(fastify_static, { 
-		root: wwwPath 
+		root: wwwPath,
+		redirect: false 	//for fastify 2 security - see: https://github.com/advisories/GHSA-p6vg-p826-qp3v
 	});
 	server.register(fastify_ws);
 
