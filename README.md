@@ -120,7 +120,7 @@ Finally to check if everything worked out fine visit the test-page in your brows
 
 Copy latest Clexi.js library from this repository and include it in your page head, e.g.:
 ```
-<script type="text/javascript" src="lib/clexi-0.8.2.js" charset="UTF-8"></script>
+<script type="text/javascript" src="lib/clexi-0.9.0.js" charset="UTF-8"></script>
 ```
 Make sure your server is running and reachable, then connect like this:
 ```
