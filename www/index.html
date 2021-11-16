@@ -20,54 +20,119 @@
 	<script type="text/javascript" src="js/jquery-3.1.1.min.js" charset="UTF-8"></script>
 	<link rel="stylesheet" href="css/main.css">
 	-->
-	<script type="text/javascript" src="lib/clexi-0.8.2.js" charset="UTF-8"></script>
+	<script type="text/javascript" src="lib/clexi-0.9.0.js" charset="UTF-8"></script>
 	<style>
+	html {
+		height: 100%;
+	}
 	body {
 		font-family: Sans-Serif;
+		display: flex;
+		flex-direction: column;
+		height: calc(100% - 16px);
+	}
+	button, input, label {
+		margin: 4px;
+	}
+	#log-out {
+	    font-size: 15px;
+		color: #00bcd4;
+		background: #000;
+		padding: 4px 6px;
+		border-radius: 5px;
+		flex: 1 1 auto;
+		min-height: 200px;
+		overflow: auto;
+	}
+	#log-out > p {
+		margin: 8px 0;
 	}
 	</style>
 </head>
 <body>
 	<div>
-		<h3>Node.js Client Extension Interface - CLEXI.js</h3>
-		<p>Test-Page</p>
+		<h3>Node.js Client Extension Interface - CLEXI.js - Test-Page</h3>
 	</div>
 	<div>
+		<h4>Connection</h4>
 		<label>Host:</label><input id="customHost"><br>
 		<label>Server ID:</label><input id="customServerId">
+		<div>
+			<button onclick="serverPing()">Ping CLEXI server</button>
+			<button onclick="connectToWebsocket()">Connect</button>
+			<button onclick="closeWebsocketConnection()">Close</button>
+		</div>
 	</div>
-	<br>
+	<h4>Xtensions</h4>
 	<div>
-		<button onclick="serverPing()">Ping CLEXI server</button>
-		<button onclick="connectToWebsocket()">Connect</button>
-		<button onclick="closeWebsocketConnection()">Close</button>
+		<label>Broadcast/HTTP-Events:</label>
 		<button onclick="websocketSendPing()">Broadcast Ping</button>
 		<button onclick="httpTestEvent()">Send Test HTTP-Event</button>
+	</div>
+	<div>
+		<label>Bluetooth BLE Beacon:</label>
 		<button onclick="websocketSendStartToBleBeaconScanner()">Start BLE Beacon Scanner</button>
 		<button onclick="websocketSendStopToBleBeaconScanner()">Stop BLE Beacon Scanner</button>
 		<button onclick="websocketSendStateRequestToBleBeaconScanner()">Get BLE Beacon Scanner State</button>
 	</div>
-	<div id="log-out">
-		<p>Client log:</p>
+	<div>
+		<label>Runtime Commands:</label>
+		<button onclick="websocketSendRuntimeCommand()">Call 'echo Hello World' in 3s</button>
 	</div>
+	<div>
+		<p><b>GPIO Interface (Raspberry Pi):</b></p>
+		<div>
+			<label>Button - Pin:</label><input id="gpio-button-pin" type="number">
+			<button onclick="websocketRegisterGpioButton(document.getElementById('gpio-button-pin').value);">Register</button>
+			<button onclick="websocketReleaseGpioButton(document.getElementById('gpio-button-pin').value);">Release</button>
+		</div>
+		<div>
+			<label>LED - Pin:</label><input id="gpio-led-pin" type="number">
+			<button onclick="websocketRegisterGpioLed(document.getElementById('gpio-led-pin').value);">Register</button>
+			<button onclick="websocketReleaseGpioLed(document.getElementById('gpio-led-pin').value);">Release</button>
+			<button onclick="websocketSetGpioLed(document.getElementById('gpio-led-pin').value, 1);">1</button>
+			<button onclick="websocketSetGpioLed(document.getElementById('gpio-led-pin').value, 0);">0</button>
+		</div>
+		<div>
+			<label>ReSpeaker Mic HAT LEDs:</label>
+			<button onclick="websocketRegisterGpioRespeakerMicHat();">Register</button>
+			<button onclick="websocketReleaseGpioRespeakerMicHat();">Release</button>
+			<button onclick="websocketGetGpioRespeakerMicHat();">Get</button>
+			<button onclick="websocketSetGpioRespeakerMicHat(1, 0, 150, 0);">(1) Green</button>
+			<button onclick="websocketSetGpioRespeakerMicHat(1, 100, 100, 0);">(1) Yellow</button>
+			<button onclick="websocketSetGpioRespeakerMicHat(1, 150, 0, 0);">(1) Red</button>
+			<button onclick="websocketSetAllRandomGpioRespeakerMicHat();">All Random</button>
+			<button onclick="websocketSetAllOffGpioRespeakerMicHat();">All Off</button>
+		</div>
+	</div>
+	<h4>Client log: <button onclick="document.getElementById('log-out').innerHTML = '';">clear</button></h4>
+	<div id="log-out"><p>Welcome - Please connect.</p></div>
+	<div style="height: 4px; width: 100%; flex: 0 0 4px;"></div>
 	<script>
 		var logOut = document.getElementById('log-out');
 		var customHost = document.getElementById('customHost');
 		var customServerId = document.getElementById('customServerId');
 		var cachedHost = ('sessionStorage' in window)? sessionStorage.getItem('hostURL') : undefined;
-		if (cachedHost) customHost.value = cachedHost;
+		if (cachedHost){
+			customHost.value = cachedHost;
+		}else{
+			customHost.value = location.href.replace(/\/index\.html.*/, "").replace(/^http(s|):/, "ws$1:");
+		}
 		
 		function log(msg){
 			console.log(msg);
-			logOut.innerHTML += (msg + "<br>");
+			var msgEle = document.createElement("p");
+			msgEle.textContent = msg;
+			logOut.appendChild(msgEle);
+			logOut.scrollTop = logOut.scrollHeight;
 		}
 		function err(e){
 			console.error(e);
-			if (e && e.msg){
-				logOut.innerHTML += ("<span style='color: #f00;'>" + e.msg + "</span><br>");
-			}else{
-				logOut.innerHTML += ("<span style='color: #f00;'>" + e + "</span><br>");
-			}
+			var msgEle = document.createElement("p");
+			msgEle.style.color = "#e91e4d";
+			msgEle.textContent = (e && e.msg)? e.msg : e;
+			logOut.appendChild(msgEle);
+			logOut.scrollTop = logOut.scrollHeight;
 		}
 		
 		//CLEXI Demo
@@ -103,7 +168,7 @@
 				//log("CLEXI - welcome event.");
 				
 				//subscribe to extension events:
-				subscribe();
+				subscribeAllAvailable(welcomeInfo);
 			});
 			//log("Connecting to CLEXI...");
 		}
@@ -140,11 +205,13 @@
 			});
 		}
 		
+		//Broadcaster
 		function websocketSendPing(){
 			ClexiJS.send('clexi-broadcaster', {
 				text: "ping"
 			});
 		}
+		//BLE Beacon
 		function websocketSendStartToBleBeaconScanner(){
 			ClexiJS.send('ble-beacon-scanner', {
 				ctrl: "start"
@@ -160,44 +227,116 @@
 				ctrl: "state"
 			});
 		}
+		//Runtime commands
+		var rtcMsgId = 1;
+		function websocketSendRuntimeCommand(){
+			ClexiJS.send('runtime-commands', {
+				id: rtcMsgId++,
+				cmd: "callCustom",
+				args: {
+					delay: 3000,
+					file: "echo",
+					TEXT: "Hello World"
+				}
+			});
+		}
+		//GPIO-Interface
+		var gpioMsgId = 1;
+		function websocketSendGpioInterfaceRequest(action, type, config){
+			ClexiJS.send('gpio-interface', {
+				id: gpioMsgId++,
+				action: action,
+				type: type,
+				config: config
+			});
+		}
+		function websocketRegisterGpioButton(pin){
+			websocketSendGpioInterfaceRequest("register", "button", {pin: pin});
+		}
+		function websocketReleaseGpioButton(pin){
+			websocketSendGpioInterfaceRequest("release", "button", {pin: pin});
+		}
+		function websocketRegisterGpioLed(pin){
+			websocketSendGpioInterfaceRequest("register", "led", {pin: pin});
+		}
+		function websocketReleaseGpioLed(pin){
+			websocketSendGpioInterfaceRequest("release", "led", {pin: pin});
+		}
+		function websocketSetGpioLed(pin, value){
+			websocketSendGpioInterfaceRequest("set", "led", {pin: pin, value: value});
+		}
+		//GPIO-Interface - Custom Item - ReSpeaker Mic HAT (SPI interface)
+		function websocketRegisterGpioRespeakerMicHat(){
+			websocketSendGpioInterfaceRequest("register", "item", {
+				file: "rpi-respeaker-mic-hat-leds",
+				options: {numOfLeds: 3}
+			});
+		}
+		function websocketReleaseGpioRespeakerMicHat(){
+			websocketSendGpioInterfaceRequest("release", "item", {
+				file: "rpi-respeaker-mic-hat-leds"
+			});
+		}
+		function websocketGetGpioRespeakerMicHat(){
+			websocketSendGpioInterfaceRequest("get", "item", {
+				file: "rpi-respeaker-mic-hat-leds"
+			});
+		}
+		function websocketSetGpioRespeakerMicHat(ledIndex, red, green, blue){
+			websocketSendGpioInterfaceRequest("set", "item", {
+				file: "rpi-respeaker-mic-hat-leds",
+				data: {ledIndex: ledIndex, red: red, green: green, blue: blue}
+			});
+		}
+		function websocketSetAllRandomGpioRespeakerMicHat(){
+			websocketSetGpioRespeakerMicHat(1, getRandomLedValue(), getRandomLedValue(), getRandomLedValue());
+			websocketSetGpioRespeakerMicHat(2, getRandomLedValue(), getRandomLedValue(), getRandomLedValue());
+			websocketSetGpioRespeakerMicHat(3, getRandomLedValue(), getRandomLedValue(), getRandomLedValue());
+		}
+		function websocketSetAllOffGpioRespeakerMicHat(){
+			websocketSetGpioRespeakerMicHat(1, 0, 0, 0);
+			websocketSetGpioRespeakerMicHat(2, 0, 0, 0);
+			websocketSetGpioRespeakerMicHat(3, 0, 0, 0);
+		}
+		function getRandomLedValue(){
+			return Math.round(Math.random() * 255 * 0.2);
+		}
 		
-		function subscribeToBeaconScanner(){
-			ClexiJS.subscribeTo('ble-beacon-scanner', function(e){
-				log('BLE Beacon event: ' + JSON.stringify(e));
+		//Common subscription method
+		function subscribeToXtension(xName){
+			ClexiJS.subscribeTo(xName, function(e){
+				log(xName + ' event: ' + JSON.stringify(e));
 			}, function(e){
-				log('BLE Beacon response: ' + JSON.stringify(e));
+				log(xName + ' response: ' + JSON.stringify(e));
 			}, function(e){
-				log('BLE Beacon error: ' + JSON.stringify(e));
+				log(xName + ' error: ' + JSON.stringify(e));
 			});
 		}
-		function subscribeToBroadcaster(){
-			ClexiJS.subscribeTo('clexi-broadcaster', function(e){
-				log('Broadcaster event: ' + JSON.stringify(e));
-			}, function(e){
-				log('Broadcaster response: ' + JSON.stringify(e));
-			}, function(e){
-				log('Broadcaster error: ' + JSON.stringify(e));
-			});
-		}
-		function subscribeToHttpEvents(){
-			ClexiJS.subscribeTo('clexi-http-events', function(e){
-				log('HTTP event: ' + JSON.stringify(e));
-			}, function(e){
-				log('HTTP response: ' + JSON.stringify(e));
-			}, function(e){
-				log('HTTP error: ' + JSON.stringify(e));
-			});
-		}
-		function subscribe(){
-			subscribeToBeaconScanner();
-			subscribeToBroadcaster();
-			subscribeToHttpEvents();
+		function subscribeAllAvailable(welcomeInfo){
+			//subscribe all active xtensions
+			if (welcomeInfo && welcomeInfo.xtensions){
+				var xtensionNames = Object.keys(welcomeInfo.xtensions);
+				xtensionNames.forEach(function(xn){
+					//check if xtension is active
+					if (welcomeInfo.xtensions[xn].active){
+						subscribeToXtension(xn);
+						subscriptions.push(xn);
+					}
+				});
+			}
+			log("Subscriptions: " + JSON.stringify(subscriptions));
 		}
 		function removeSubscriptions(){
-			ClexiJS.removeSubscription('clexi-broadcaster');
-			ClexiJS.removeSubscription('clexi-http-events');
-			ClexiJS.removeSubscription('ble-beacon-scanner');
+			//unsubscribe all active xtensions
+			subscriptions.forEach(function(xn){
+				ClexiJS.removeSubscription(xn);
+			});
+			if (subscriptions.length){
+				log("Unsubscribed all");
+			}
+			subscriptions = [];
 		}
+		var subscriptions = [];
 	</script>
 </body>
 </html>
