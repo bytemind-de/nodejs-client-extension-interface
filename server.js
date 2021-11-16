@@ -206,6 +206,7 @@ var Clexi = function(customSettings){
 				server.log.error(err);
 				process.exit(1);
 			}
+			console.log(`Local date/time at start: ${new Date().toLocaleString()}`);
 			console.log(`Server with ID '${serverId}' running at: ${address}`);
 			console.log(`Hostname: ${hostname} - SSL: ${useSsl}`);
 			server.log.info(`Server running at ${address}`);
