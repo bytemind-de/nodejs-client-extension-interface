@@ -1,10 +1,12 @@
 # Node.js CLEXI
-Node.js CLEXI is a lightweight **cl**ient **ex**tension **i**nterface that enhances connected clients with functions of the underlying operating system using a duplex, realtime Websocket connection.
-Current extensions include:
+Node.js CLEXI is a lightweight **cl**ient **ex**tension **i**nterface that enhances connected clients with functions of the underlying operating system using a duplex, realtime Websocket connection.  
+  
+Currently available extensions:
 * clexi-broadcaster - a simple Websocket message broadcaster
 * clexi-http-events - receives events at the 'event' endpoint and broadcasts them via the Websocket connection
 * ble-beacon-scanner - scans for Bluetooth BLE beacons and broadcasts their data
 * runtime-commands - (deactivated by default) execute runtime commands
+* gpio-interface - (deactivated by default) register Raspberry Pi GPIO items (buttons, LEDs, custom), send and receive data
 
 CLEXI works as a web-server as well and can host the client application if required (e.g. just put the files in the www folder).
 
@@ -52,31 +54,55 @@ CLEXI will then broadcast the data as following message object to all Websocket 
 {"name":"myEventName","data":{"answer":"42"}}
 ```
 
-## Raspberry Pi 3 installation
+## Raspberry Pi 4 installation
 
 Requirements:  
-* Node.js (tested with 9.11.2 and 10.15.3)
+* Node.js (v0.9.0+ should **use 14** - v0.8.2 was tested with 9.11.2 and 10.15.3)
 * Some Linux packages: `sudo apt-get install bluetooth bluez libbluetooth-dev libudev-dev libnss3-tools libcap2-bin openssl`
 * SSL certificates for HTTPS (you can use the included script to generate self-signed)
-  
-Clone the repository to the folder 'clexi', enter that folder and run `npm install`:  
+
+### Install Node.js 14
+
+You can use the official script:
+```
+curl -fsSL https://deb.nodesource.com/setup_14.x | sudo -E bash -
+sudo apt-get install -y nodejs
+```
+
+### Install CLEXI
+
+Clone the repository to the folder 'clexi', enter the folder and run `npm install`:  
 ```
 git clone https://github.com/bytemind-de/nodejs-client-extension-interface.git clexi
 cd clexi
 npm install
 ```  
 Decide which hostname you want to use for your server. Default is `localhost` but I usually prefer `raspberrypi.local` (default hostname of RPi) to make CLEXI available to all devices in the network.  
-You can change your hostname via the raspi-config tool.
-Now generate some self-signed SSL certificates for your CLEXI server:  
+You can change your hostname via the raspi-config tool.  
+Optional: Generate some self-signed SSL certificates for your CLEXI server:  
 ```
 sh generate_ssl_cert.sh
 ```  
 The tool will ask you for some info. By pressing RETURN you can keep most of the default values, just for `common name` choose your hostname (or 'localhost').  
-Next step is to adjust the CLEXI settings. Use a text editor of your choice, I prefer nano:
+  
+### Configuration (settings.json)
+
+Next step is to adjust the CLEXI settings. Use a text editor of your choice, e.g. nano:
 ```
 nano settings.json
 ```  
 Here you can change the default port of your server and set the hostname to the SAME name you used for the SSL certificate (e.g. raspberrypi.local). This is important because you might not be able to reach the server otherwhise.  
+To load specific extensions ajust the array: `"xtensions": [...]`. For example if you want to activate runtime commands and GPIO interface add:
+```
+"xtensions": [
+	...
+	"runtime-commands",
+	"gpio-interface"
+]
+```
+
+### Run the server
+
 Now you can run your server :-)  
 ```
 sudo node server.js
