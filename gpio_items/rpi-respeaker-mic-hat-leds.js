@@ -27,8 +27,8 @@ class GpioItem {
 	constructor(options){
 		if (!options) options = {};
 		//LED config
-		this._numOfLeds = options.numOfLeds || 3;			//2mic HAT has 3, 4mic has 12? ...
-		this._ledBits = this._numOfLeds * 4 + 8;	//BGRb + 4 start frame bits + 4 end frame bits
+		this._numOfLeds = options.numOfLeds || 3;		//2mic HAT has 3, 4mic has 12? ...
+		this._ledBits = this._numOfLeds * 4 + 8;		//BGRb + 4 start frame bits + 4 end frame bits
 		this._ledBuffer = Buffer.alloc(this._ledBits);	//full LEDs configuration
 		
 		//APA102 IC
@@ -59,13 +59,13 @@ class GpioItem {
 				byteLength: this._ledBits,
 				speedHz: this.apa102Speed
 			}];
-			this.apa102.transfer(message, (err, message) => {
+			this.apa102.transfer(message, (err, response) => {
 				if (err){
 					errorCallback(err);
 				}else{
-					//console.log("transfer response", message);	//DEBUG
+					//console.log("transfer response", response);	//DEBUG
 					//TODO: use response?
-					successCallback();
+					successCallback({status: "transfered"});
 				}
 			});
 		}
@@ -120,9 +120,13 @@ class GpioItem {
 		}
 	}
 	
-	readData(data, successCallback, errorCallback){
-		errorCallback({name: "NotSupported", message: "This function is not supported"});
-		//TODO: return LED buffer? Or converted to RGB data?
+	readData(options, successCallback, errorCallback){
+		//TODO: converted to RGB data? read fresh from device?
+		if (this._ledBuffer){
+			successCallback({result: this._ledBuffer});
+		}else{
+			errorCallback({name: "NoData", message: "No data found"});
+		}
 	}
 	
 	release(successCallback, errorCallback){
