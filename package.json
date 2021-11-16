@@ -31,7 +31,7 @@
     "fastify": "^2.15.3",
     "fastify-static": "^2.7.0",
     "fastify-ws": "^1.0.3",
-	"onoff": "^6.0.3",
-	"spi-device": "^3.1.2"
+    "onoff": "^6.0.3",
+    "spi-device": "^3.1.2"
   }
 }

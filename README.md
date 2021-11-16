@@ -1,12 +1,12 @@
 # Node.js CLEXI
 Node.js CLEXI is a lightweight **cl**ient **ex**tension **i**nterface that enhances connected clients with functions of the underlying operating system using a duplex, realtime Websocket connection.  
   
-Currently available extensions:
+Currently available extensions (activate via settings):
 * clexi-broadcaster - a simple Websocket message broadcaster
-* clexi-http-events - receives events at the 'event' endpoint and broadcasts them via the Websocket connection
+* clexi-http-events - receives HTTP events via '/event' endpoint and broadcasts them via the Websocket connection
 * ble-beacon-scanner - scans for Bluetooth BLE beacons and broadcasts their data
-* runtime-commands - (deactivated by default) execute runtime commands
-* gpio-interface - (deactivated by default) register Raspberry Pi GPIO items (buttons, LEDs, custom), send and receive data
+* runtime-commands - execute runtime commands
+* gpio-interface - register Raspberry Pi GPIO items (buttons, LEDs, custom), send and receive data
 
 CLEXI works as a web-server as well and can host the client application if required (e.g. just put the files in the www folder).
 
@@ -35,30 +35,12 @@ const settings = {
 ```
 See client and extensions section below to get more info.
 
-## Using the 'clexi-http-events' extension
-As noted above this extension receives events at the 'event' endpoint and broadcasts them via the Websocket connection. The 'event' endpoint accepts HTTP GET and POST requests in the following format (curl example):
-```
-#POST example
-curl -X POST \
-  https://raspberrypi.local:8443/event/myEventName \
-  -H 'Content-Type: application/json' \
-  -d '{
-	"answer": "42"
-}'
-#GET example
-curl -X GET \
-  'https://raspberrypi.local:8443/event/myEventName?answer=42'
-```
-CLEXI will then broadcast the data as following message object to all Websocket clients:
-```
-{"name":"myEventName","data":{"answer":"42"}}
-```
-
 ## Raspberry Pi 4 installation
 
 Requirements:  
 * Node.js (v0.9.0+ should **use 14** - v0.8.2 was tested with 9.11.2 and 10.15.3)
-* Some Linux packages: `sudo apt-get install bluetooth bluez libbluetooth-dev libudev-dev libnss3-tools libcap2-bin openssl`
+* Some packages for Bluetooth etc.: `sudo apt-get install bluetooth bluez libbluetooth-dev libudev-dev libnss3-tools libcap2-bin openssl procps`
+* To install Node packages you might need: `sudo apt-get install build-essential`
 * SSL certificates for HTTPS (you can use the included script to generate self-signed)
 
 ### Install Node.js 14
@@ -79,11 +61,13 @@ npm install
 ```  
 Decide which hostname you want to use for your server. Default is `localhost` but I usually prefer `raspberrypi.local` (default hostname of RPi) to make CLEXI available to all devices in the network.  
 You can change your hostname via the raspi-config tool.  
+  
 Optional: Generate some self-signed SSL certificates for your CLEXI server:  
 ```
 sh generate_ssl_cert.sh
 ```  
 The tool will ask you for some info. By pressing RETURN you can keep most of the default values, just for `common name` choose your hostname (or 'localhost').  
+If you use SSL make sure to set `"ssl": true` inside the settings.
   
 ### Configuration (settings.json)
 
@@ -96,6 +80,7 @@ To load specific extensions ajust the array: `"xtensions": [...]`. For example i
 ```
 "xtensions": [
 	...
+	"ble-beacon-scanner",
 	"runtime-commands",
 	"gpio-interface"
 ]
@@ -156,6 +141,26 @@ ClexiJS.pingAndConnect(hostURL, function(err){
 ```
   
 For more [examples](www/index.html) check the `www` folder of this repository.
+
+## Using the 'clexi-http-events' extension
+
+This extension receives events at the 'event' endpoint and broadcasts them via the Websocket connection. The 'event' endpoint accepts HTTP GET and POST requests in the following format (curl example):
+```
+#POST example
+curl -X POST \
+  https://raspberrypi.local:8443/event/myEventName \
+  -H 'Content-Type: application/json' \
+  -d '{
+	"answer": "42"
+}'
+#GET example
+curl -X GET \
+  'https://raspberrypi.local:8443/event/myEventName?answer=42'
+```
+CLEXI will then broadcast the data as following message object to all Websocket clients:
+```
+{"name":"myEventName","data":{"answer":"42"}}
+```
 
 ## Adding your own extensions
 
