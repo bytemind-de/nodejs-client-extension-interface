@@ -6,7 +6,7 @@
 * Added custom gpio-item example 'rpi-respeaker-mic-hat-leds' to control ReSpeaker Mic HAT LEDs (uses SPI interface). The button on pin 17 works as well ;-)
 * Improved runtime-commands file name check
 * Improved test page
-* Client is unchanged, just renamed to v0.9.0 to be consistent with server, you can keep using v0.8.2.
+* Client v0.9.0 has support for custom client and message IDs
 
 ## v0.8.2
 * Added 'runtime-commands' extension and folder (beta, deactivated by default)
