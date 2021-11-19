@@ -69,6 +69,7 @@ GpioInterface = function(onStartCallback, onEventCallback, onErrorCallback){
 		var edge = config.edge || "both";
 		if (buttons[id]){
 			onButtonError("Button already registered", 423, msgId);
+			//TODO: should this be limited to 'id' or to 'pin'?
 			return "sent";
 		}
 		console.log("GPIO-Interface: registerButton", id, pin, direction, edge);		//DEBUG
@@ -153,6 +154,7 @@ GpioInterface = function(onStartCallback, onEventCallback, onErrorCallback){
 		var direction = "out";
 		if (leds[id]){
 			onLedError("LED already registered", 423, msgId);
+			//TODO: should this be limited to 'id' or to 'pin'?
 			return "sent";
 		}
 		console.log("GPIO-Interface: registerLed", id, pin);		//DEBUG
@@ -260,6 +262,7 @@ GpioInterface = function(onStartCallback, onEventCallback, onErrorCallback){
 		var id = config.id || config.file;
 		if (items[id]){
 			onItemError("Item already registered", 423, msgId);
+			//TODO: should this be limited to 'id' or to 'file'?
 			return "sent";
 		}
 		console.log("GPIO-Interface: registerItem", id, config.file);		//DEBUG
