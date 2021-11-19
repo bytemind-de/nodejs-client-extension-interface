@@ -67,11 +67,14 @@ GpioInterface = function(onStartCallback, onEventCallback, onErrorCallback){
 		var id = config.id || (pin + "");
 		var direction = config.direction || "in";
 		var edge = config.edge || "both";
+		if (buttons[id]){
+			onButtonError("Button already registered", 423, msgId);
+			return "sent";
+		}
 		console.log("GPIO-Interface: registerButton", id, pin, direction, edge);		//DEBUG
 		if (typeof pin == "number" 
 			&& ["in", "out", "high", "low"].indexOf(direction) >= 0
 			&& ["none", "rising", "falling", "both"].indexOf(edge) >= 0
-			&& buttons[id] == undefined
 		){
 			try {
 				//register button listener
@@ -148,8 +151,12 @@ GpioInterface = function(onStartCallback, onEventCallback, onErrorCallback){
 		var pin = (config.pin != undefined)? +config.pin : undefined;
 		var id = config.id || (pin + "");
 		var direction = "out";
+		if (leds[id]){
+			onLedError("LED already registered", 423, msgId);
+			return "sent";
+		}
 		console.log("GPIO-Interface: registerLed", id, pin);		//DEBUG
-		if (typeof pin == "number" && leds[id] == undefined){
+		if (typeof pin == "number"){
 			try {
 				//register LED
 				leds[id] = new Gpio(pin, direction);
@@ -251,36 +258,36 @@ GpioInterface = function(onStartCallback, onEventCallback, onErrorCallback){
 			return "sent";
 		}
 		var id = config.id || config.file;
+		if (items[id]){
+			onItemError("Item already registered", 423, msgId);
+			return "sent";
+		}
 		console.log("GPIO-Interface: registerItem", id, config.file);		//DEBUG
-		if (items[id] == undefined){
-			try {
-				//require item file
-				var path = "../gpio_items/" + config.file;
-				const ItemModule = require(path);
-				var itemDesc = ItemModule.description();
-				//console.log("Item desc.", itemDesc);						//DEBUG
-				items[id] = new ItemModule.GpioItem(config.options);
-				//console.log("Item", items[id]);							//DEBUG
-				//init - TODO: make optional?
-				items[id].init(function(){
-					//done
-					broadcast({
-						type: "itemRegister",
-						msgId: msgId,
-						id: id,
-						file: config.file,
-						description: itemDesc
-					});
-				}, function(err){
-					if (!err) err = {message: "Failed to init. item"};
-					onItemError(err.message || err.name || "Failed to init. item", 500, msgId);
+		try {
+			//require item file
+			var path = "../gpio_items/" + config.file;
+			const ItemModule = require(path);
+			var itemDesc = ItemModule.description();
+			//console.log("Item desc.", itemDesc);						//DEBUG
+			items[id] = new ItemModule.GpioItem(config.options);
+			//console.log("Item", items[id]);							//DEBUG
+			//init - TODO: make optional?
+			items[id].init(function(){
+				//done
+				broadcast({
+					type: "itemRegister",
+					msgId: msgId,
+					id: id,
+					file: config.file,
+					description: itemDesc
 				});
-			}catch (err){
-				if (!err) err = {message: "Failed to register item"};
-				onItemError(err.message || err.name || "Failed to register item", 500, msgId);
-			}
-		}else{
-			onItemError("Invalid item configuration", 400, msgId);
+			}, function(err){
+				if (!err) err = {message: "Failed to init. item"};
+				onItemError(err.message || err.name || "Failed to init. item", 500, msgId);
+			});
+		}catch (err){
+			if (!err) err = {message: "Failed to register item"};
+			onItemError(err.message || err.name || "Failed to register item", 500, msgId);
 		}
 		return "sent";
 	}
