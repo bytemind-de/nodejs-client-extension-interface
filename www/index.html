@@ -137,6 +137,8 @@
 		
 		//CLEXI Demo
 		
+		ClexiJS.clientBaseId = "TEST-CL-";
+		
 		ClexiJS.onLog = log;
 		ClexiJS.onDebug = log;
 		ClexiJS.onError = err;
@@ -228,10 +230,10 @@
 			});
 		}
 		//Runtime commands
-		var rtcMsgId = 1;
+		var rtcCmdId = 1;
 		function websocketSendRuntimeCommand(){
 			ClexiJS.send('runtime-commands', {
-				id: rtcMsgId++,
+				id: "CMD-" + ++rtcCmdId,
 				cmd: "callCustom",
 				args: {
 					delay: 3000,
@@ -241,10 +243,8 @@
 			});
 		}
 		//GPIO-Interface
-		var gpioMsgId = 1;
 		function websocketSendGpioInterfaceRequest(action, type, config){
 			ClexiJS.send('gpio-interface', {
-				id: gpioMsgId++,
 				action: action,
 				type: type,
 				config: config
