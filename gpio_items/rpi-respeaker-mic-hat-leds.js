@@ -2,6 +2,17 @@
 //double-check: ls -l /dev/spi*
 const spi = require('spi-device');
 
+/*
+Required interface functions:
+- description(): Info about the item options and commands
+- Class:
+  - constructor(options)
+  - init(successCallback, errorCallback)
+  - writeData(data, successCallback, errorCallback)
+  - readData(options, successCallback, errorCallback)
+  - release(successCallback, errorCallback)
+*/
+
 function description(){
 	return {
 		type: "ledArray",
