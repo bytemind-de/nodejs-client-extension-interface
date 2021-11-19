@@ -55,7 +55,7 @@ GpioInterface = function(onStartCallback, onEventCallback, onErrorCallback){
 			process.exit(0);
 		}
 	}
-	['exit', 'SIGINT', 'SIGUSR1', 'SIGUSR2', 'uncaughtException', 'SIGTERM'].forEach((eventType) => {
+	['exit', 'SIGINT', 'SIGUSR1', 'SIGUSR2', 'SIGTERM'].forEach((eventType) => {
 		process.on(eventType, cleanUpGpio.bind(null, eventType));
 	});
 	var cleanUpSuccess = false;
@@ -82,7 +82,7 @@ GpioInterface = function(onStartCallback, onEventCallback, onErrorCallback){
 				buttons[id] = new Gpio(pin, direction, edge, config.options);
 				buttons[id].watch(function(err, value){
 					if (err){
-						onButtonError(err.message || err.name || "Button error", 500);
+						onButtonError(err.message || err.name || "Button error", 500, id);
 					}else{
 						broadcast({
 							type: "button",
@@ -135,15 +135,19 @@ GpioInterface = function(onStartCallback, onEventCallback, onErrorCallback){
 		}
 		return "sent";
 	}
-	function onButtonError(msg, code, msgId){
-		if (onErrorCallback) onErrorCallback({
-			error: {
-				name: "GpioButtonError",
-				msg: msg,
-				code: code,
-				msgId: msgId
-			}
-		});
+	function onButtonError(msg, code, msgId, itemId){
+		if (onErrorCallback){
+			var msg = {
+				error: {
+					name: "GpioButtonError",
+					msg: msg,
+					code: code,
+					msgId: msgId
+				}
+			};
+			if (itemId) msg.error.itemId = itemId;
+			onErrorCallback(msg);
+		}
 	}
 	
 	//LEDs (GPIO direct)
@@ -217,7 +221,7 @@ GpioInterface = function(onStartCallback, onEventCallback, onErrorCallback){
 				leds[id].write(val, function(err){
 					if (err) {
 						if (!err) err = {message: "Failed to set LED"};
-						onLedError(err.message || err.name || "Failed to set LED", 500, msgId);
+						onLedError(err.message || err.name || "Failed to set LED", 500, msgId, id, "set");
 					}else{
 						broadcast({
 							type: "ledSet",
@@ -229,7 +233,7 @@ GpioInterface = function(onStartCallback, onEventCallback, onErrorCallback){
 				});
 			}catch (err){
 				if (!err) err = {message: "Failed to set LED"};
-				onLedError(err.message || err.name || "Failed to set LED", 500, msgId);
+				onLedError(err.message || err.name || "Failed to set LED", 500, msgId, id, "set");
 			}
 		}else{
 			broadcast({
@@ -241,22 +245,27 @@ GpioInterface = function(onStartCallback, onEventCallback, onErrorCallback){
 		}
 		return "sent";
 	}
-	function onLedError(msg, code, msgId){
-		if (onErrorCallback) onErrorCallback({
-			error: {
-				name: "GpioLedError",
-				msg: msg,
-				code: code,
-				msgId: msgId
+	function onLedError(msg, code, msgId, itemId, action){
+		if (onErrorCallback){
+			var msg = {
+				error: {
+					name: "GpioLedError",
+					msg: msg,
+					code: code,
+					msgId: msgId
+				}
 			}
-		});
+			if (itemId != undefined) msg.error.itemId = itemId;
+			if (action != undefined) msg.error.action = action;
+			onErrorCallback(msg);
+		}
 	}
 	
 	//ITEMS (folder: ../gpio_items/)
 	
 	function registerItem(config, msgId){
 		//check
-		if (!checkAndCleanFileName(config)){
+		if (!checkAndCleanFileName(config, msgId)){
 			return "sent";
 		}
 		var id = config.id || config.file;
@@ -296,7 +305,7 @@ GpioInterface = function(onStartCallback, onEventCallback, onErrorCallback){
 	}
 	function releaseItem(config, msgId){
 		//check
-		if (!checkAndCleanFileName(config)){
+		if (!checkAndCleanFileName(config, msgId)){
 			return "sent";
 		}
 		var id = config.id || config.file;
@@ -328,7 +337,7 @@ GpioInterface = function(onStartCallback, onEventCallback, onErrorCallback){
 	}
 	function setItem(config, msgId){
 		//check
-		if (!checkAndCleanFileName(config)){
+		if (!checkAndCleanFileName(config, msgId)){
 			return "sent";
 		}
 		var data = config.data;
@@ -348,11 +357,11 @@ GpioInterface = function(onStartCallback, onEventCallback, onErrorCallback){
 					});
 				}, function(err){
 					if (!err) err = {message: "Failed to set item"};
-					onItemError(err.message || err.name || "Failed to set item", 500, msgId);
+					onItemError(err.message || err.name || "Failed to set item", 500, msgId, id, "set");
 				});
 			}catch (err){
 				if (!err) err = {message: "Failed to set item"};
-				onItemError(err.message || err.name || "Failed to set item", 500, msgId);
+				onItemError(err.message || err.name || "Failed to set item", 500, msgId, id, "set");
 			}
 		}else{
 			broadcast({
@@ -365,7 +374,7 @@ GpioInterface = function(onStartCallback, onEventCallback, onErrorCallback){
 	}
 	function getItem(config, msgId){
 		//check
-		if (!checkAndCleanFileName(config)){
+		if (!checkAndCleanFileName(config, msgId)){
 			return "sent";
 		}
 		var id = config.id || config.file;
@@ -381,11 +390,11 @@ GpioInterface = function(onStartCallback, onEventCallback, onErrorCallback){
 					});
 				}, function(err){
 					if (!err) err = {message: "Failed to get item"};
-					onItemError(err.message || err.name || "Failed to set item", 500, msgId);
+					onItemError(err.message || err.name || "Failed to get item", 500, msgId, id, "get");
 				});
 			}catch (err){
 				if (!err) err = {message: "Failed to get item"};
-				onItemError(err.message || err.name || "Failed to get item", 500, msgId);
+				onItemError(err.message || err.name || "Failed to get item", 500, msgId, id, "get");
 			}
 		}else{
 			broadcast({
@@ -396,7 +405,7 @@ GpioInterface = function(onStartCallback, onEventCallback, onErrorCallback){
 		}
 		return "sent";
 	}
-	function checkAndCleanFileName(config){
+	function checkAndCleanFileName(config, msgId){
 		//check
 		if (!config || !config.file){
 			onItemError("Invalid item configuration, missing interface file name.", 400, msgId);
@@ -412,15 +421,20 @@ GpioInterface = function(onStartCallback, onEventCallback, onErrorCallback){
 		}
 		return true;
 	}
-	function onItemError(msg, code, msgId){
-		if (onErrorCallback) onErrorCallback({
-			error: {
-				name: "GpioItemError",
-				msg: msg,
-				code: code,
-				msgId: msgId
-			}
-		});
+	function onItemError(msg, code, msgId, itemId, action){
+		if (onErrorCallback){
+			var msg = {
+				error: {
+					name: "GpioItemError",
+					msg: msg,
+					code: code,
+					msgId: msgId
+				}
+			};
+			if (itemId != undefined) msg.error.itemId = itemId;
+			if (action != undefined) msg.error.action = action;
+			onErrorCallback(msg);
+		}
 	}
 	
 	//---- CLEXI INTERFACE ----
