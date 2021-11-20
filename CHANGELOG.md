@@ -1,5 +1,13 @@
 # Changelog for CLEXI - Client Extension Interface
 
+## v0.9.0
+* Switched to Node.js 14 as officially supported version and changed repository for 'node-beacon-scanner' to more up-to-date version
+* Added new extension 'gpio-interface' to communicate with the GPIO pins of Raspberry Pi (and similar boards)
+* Added custom gpio-item example 'rpi-respeaker-mic-hat-leds' to control ReSpeaker Mic HAT LEDs (uses SPI interface). The button on pin 17 works as well ;-)
+* Improved runtime-commands file name check
+* Improved test page
+* Client v0.9.0 has support for custom client and message IDs
+
 ## v0.8.2
 * Added 'runtime-commands' extension and folder (beta, deactivated by default)
 * Updated client lib to support 'onWelcome' event as Clexi.connect callback

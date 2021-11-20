@@ -3,13 +3,12 @@
 	"id": "clexi-123",
 	"idIsPassword": false,
 	"port": 8443,
-	"ssl": true,
+	"ssl": false,
 	"logger": { 
 		"level": "error"
 	},
 	"xtensions": [
 		"clexi-broadcaster",
-		"clexi-http-events",
-		"ble-beacon-scanner"
+		"clexi-http-events"
 	]
 }

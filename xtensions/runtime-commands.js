@@ -99,19 +99,30 @@ RuntimeCommands = function(onStartCallback, onEventCallback, onErrorCallback){
 	
 	//Call a script in default folder ../runtime_commands
 	function callCustom(cmdId, arguments, successCallback, errorCallback){
+		//check
+		if (!arguments || !arguments.file){
+			errorCallback("runtime command name empty", 404);
+			return;
+		}else{
+			//sanitize
+			arguments.file = arguments.file.split(".")[0].replace(/[^a-zA-Z0-9_-]/g, "");
+			//still ok?
+			if (!arguments.file){
+				errorCallback("runtime command name invalid", 404);
+				return;
+			}
+		}
 		//build script path
 		var path = "runtime_commands/" + arguments.file;
-		if (path.indexOf(".") <= 0){
-			if (isLinux()){
-				//.linux
-				path += ".linux";
-			}else if (isWindows()){
-				//.windows
-				path += ".windows";
-			}else if (isMac()){
-				//.mac
-				path += ".mac";
-			}
+		if (isLinux()){
+			//.linux
+			path += ".linux";
+		}else if (isWindows()){
+			//.windows
+			path += ".windows";
+		}else if (isMac()){
+			//.mac
+			path += ".mac";
 		}
 		//check if script exists
 		var cmd;
