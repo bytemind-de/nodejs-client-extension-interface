@@ -80,7 +80,11 @@
 		<button onclick="websocketSendRuntimeCommand()">Call 'echo Hello World' in 3s</button>
 	</div>
 	<div>
-		<p><b>GPIO Interface (Raspberry Pi):</b></p>
+		<p><b>Xtension: GPIO Interface (Raspberry Pi):</b></p>
+		<div>
+			<button onclick="websocketGpioGetAll();">Get All Registered</button>
+			<button onclick="websocketGpioReleaseAll();">Release All</button>
+		</div>
 		<div>
 			<label>Button - Pin:</label><input id="gpio-button-pin" type="number">
 			<button onclick="websocketRegisterGpioButton(document.getElementById('gpio-button-pin').value);">Register</button>
@@ -249,6 +253,12 @@
 				type: type,
 				config: config
 			});
+		}
+		function websocketGpioGetAll(){
+			websocketSendGpioInterfaceRequest("get", "all", {});
+		}
+		function websocketGpioReleaseAll(){
+			websocketSendGpioInterfaceRequest("release", "all", {});
 		}
 		function websocketRegisterGpioButton(pin){
 			websocketSendGpioInterfaceRequest("register", "button", {pin: pin});

@@ -17,48 +17,99 @@ GpioInterface = function(onStartCallback, onEventCallback, onErrorCallback){
 			process.exit(0);
 			return;
 		}
+		var exitTimer;
 		try {
-			var shouldRelease = Object.keys(buttons).length + Object.keys(leds).length + Object.keys(items).length;
-			var hasReleased = 0;
-			console.log("GPIO-Interface: Releasing " + shouldRelease + " registered GPIO handlers (" + eventType + ")");		//DEBUG
-			var exitTimer = setTimeout(function(){
+			console.log("GPIO-Interface: Clean-up before exit (ev: " + eventType + ")");
+			exitTimer = setTimeout(function(){
 				console.error("GPIO-Interface: Failed to exit gracefully - Took too long.");
 				process.exit(1);
 			}, 3000);
-			Object.values(buttons).forEach(function(btn){
-				try{ btn.unexport(); hasReleased++; }catch(err){}
-				cleanUpDone(shouldRelease, hasReleased, eventType);
+			startReleaseAll(function(){
+				//done
+				console.log("GPIO-Interface: EXIT.");		//DEBUG
+				cleanUpSuccess = true;
+				clearTimeout(exitTimer);
+				process.exit(0);
 			});
-			buttons = {};
-			Object.values(leds).forEach(function(led){
-				try{ led.unexport(); hasReleased++; }catch(err){}
-				cleanUpDone(shouldRelease, hasReleased, eventType);
-			});
-			leds = {};
-			Object.values(items).forEach(function(item){
-				item.release(function(){
-					hasReleased++;
-					cleanUpDone(shouldRelease, hasReleased, eventType);
-				}, console.error);
-			});
-			items = {};
-			cleanUpDone(shouldRelease, hasReleased, eventType);
 		}catch (err){
 			console.error("GPIO-Interface: Failed to exit gracefully", err);
+			clearTimeout(exitTimer);
 			process.exit(1);
-		}
-	}
-	function cleanUpDone(should, has, eventType){
-		if (should >= has){
-			console.log("GPIO-Interface: Released all handlers. EXIT.");		//DEBUG
-			cleanUpSuccess = true;
-			process.exit(0);
 		}
 	}
 	['exit', 'SIGINT', 'SIGUSR1', 'SIGUSR2', 'SIGTERM'].forEach((eventType) => {
 		process.on(eventType, cleanUpGpio.bind(null, eventType));
 	});
 	var cleanUpSuccess = false;
+	
+	//ALL
+	
+	//release all
+	function releaseAll(msgId){
+		startReleaseAll(function(releasedNum){
+			broadcast({
+				type: "releaseAll",
+				msgId: msgId,
+				status: "success",
+				released: releasedNum
+			});
+		});
+		return "sent";
+	}
+	function startReleaseAll(doneCallback){
+		var shouldRelease = Object.keys(buttons).length + Object.keys(leds).length + Object.keys(items).length;
+		var hasReleased = 0;
+		console.log("GPIO-Interface: Releasing " + shouldRelease + " registered GPIO handlers.");		//DEBUG
+		//buttons
+		Object.values(buttons).forEach(function(btn){
+			try{ btn.unexport(); hasReleased++; }catch(err){}
+			checkReleaseAllDone(shouldRelease, hasReleased, doneCallback);
+		});
+		buttons = {};
+		//leds
+		Object.values(leds).forEach(function(led){
+			try{ led.unexport(); hasReleased++; }catch(err){}
+			checkReleaseAllDone(shouldRelease, hasReleased, doneCallback);
+		});
+		leds = {};
+		//items
+		Object.values(items).forEach(function(item){
+			item.release(function(){
+				hasReleased++;
+				checkReleaseAllDone(shouldRelease, hasReleased, doneCallback);
+			}, console.error);
+		});
+		items = {};
+	}
+	function checkReleaseAllDone(should, has, doneCallback){
+		if (has >= should){
+			console.log("GPIO-Interface: Released all handlers.");		//DEBUG
+			doneCallback(has);
+		}
+	}
+	//get all
+	function getAll(msgId){
+		var buttonsInfo = [];
+		Object.keys(buttons).forEach(function(id){
+			buttonsInfo.push(buttons[id].clexiInfo);
+		});
+		var ledsInfo = [];
+		Object.keys(leds).forEach(function(id){
+			ledsInfo.push(leds[id].clexiInfo);
+		});
+		var itemsInfo = [];
+		Object.keys(items).forEach(function(id){
+			itemsInfo.push(items[id].clexiInfo);
+		});
+		broadcast({
+			type: "getAll",
+			msgId: msgId,
+			buttons: buttonsInfo,
+			leds: ledsInfo,
+			items: itemsInfo
+		});
+		return "sent";
+	}
 	
 	//BUTTONS (GPIO direct)
 	
@@ -80,6 +131,7 @@ GpioInterface = function(onStartCallback, onEventCallback, onErrorCallback){
 			try {
 				//register button listener
 				buttons[id] = new Gpio(pin, direction, edge, config.options);
+				buttons[id].clexiInfo = {id: id, pin: pin};
 				buttons[id].watch(function(err, value){
 					if (err){
 						onButtonError(err.message || err.name || "Button error", 500, id);
@@ -166,6 +218,7 @@ GpioInterface = function(onStartCallback, onEventCallback, onErrorCallback){
 			try {
 				//register LED
 				leds[id] = new Gpio(pin, direction);
+				leds[id].clexiInfo = {id: id, pin: pin};
 				broadcast({
 					type: "ledRegister",
 					msgId: msgId,
@@ -282,6 +335,7 @@ GpioInterface = function(onStartCallback, onEventCallback, onErrorCallback){
 			var itemDesc = ItemModule.description();
 			//console.log("Item desc.", itemDesc);						//DEBUG
 			items[id] = new ItemModule.GpioItem(config.options);
+			items[id].clexiInfo = {id: id, file: config.file};
 			//console.log("Item", items[id]);							//DEBUG
 			//init - TODO: make optional?
 			items[id].init(function(){
@@ -490,6 +544,12 @@ GpioInterface = function(onStartCallback, onEventCallback, onErrorCallback){
 				}else if (action == "get"){
 					//config: id (any name), file (string), options (object)
 					return getItem(config, msgId);
+				}
+			}else if (type == "all"){
+				if (action == "get"){
+					return getAll(msgId);
+				}else if (action == "release"){
+					return releaseAll(msgId);
 				}
 			}
 		}
