@@ -120,7 +120,7 @@
 		if (cachedHost){
 			customHost.value = cachedHost;
 		}else{
-			customHost.value = location.href.replace(/\/index\.html.*/, "").replace(/^http(s|):/, "ws$1:");
+			customHost.value = location.href.replace(/\/index\.html.*/, "").replace(/\/$/, "").replace(/^http(s|):/, "ws$1:");
 		}
 		
 		function log(msg){
