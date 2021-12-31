@@ -7,7 +7,7 @@ const fastify_static = require('fastify-static');
 const fastify_ws = require('fastify-ws');
 
 //Server
-const version = "0.8.2";
+const version = "0.9.0";
 const settings = require('./settings.json');
 
 var Clexi = function(customSettings){
@@ -51,7 +51,8 @@ var Clexi = function(customSettings){
 
 	//Plugins
 	server.register(fastify_static, { 
-		root: wwwPath 
+		root: wwwPath,
+		redirect: false 	//for fastify 2 security - see: https://github.com/advisories/GHSA-p6vg-p826-qp3v
 	});
 	server.register(fastify_ws);
 
@@ -205,6 +206,7 @@ var Clexi = function(customSettings){
 				server.log.error(err);
 				process.exit(1);
 			}
+			console.log(`Local date/time at start: ${new Date().toLocaleString()}`);
 			console.log(`Server with ID '${serverId}' running at: ${address}`);
 			console.log(`Hostname: ${hostname} - SSL: ${useSsl}`);
 			server.log.info(`Server running at ${address}`);
