@@ -1,5 +1,6 @@
 //might be required: sudo usermod -a -G spi $USER
 //double-check: ls -l /dev/spi*
+//if you have connection issues: activate SPI interface in OS, check pin 5
 const Gpio = require('onoff').Gpio;		//required for pin 5 voltage
 const spi = require('spi-device');
 
@@ -42,17 +43,18 @@ class GpioItem {
 		this.isReady = false;
 		
 		//LED config
-		this._model = options.model || "2mic";			//2mic, 4mic, 6mic, 4micL, ?
+		this._model = options.model || "2mic";			//2mic, 4mic, 6mic, 4micL
 		this._numOfLeds = options.numOfLeds;			//2mic HAT has 3, 4mic has 12? ...
 		if (this._numOfLeds == undefined){
 			if (this._model == "2mic"){
 				this._numOfLeds = 3;
-			}else if (this._model == "4mic"){
+			}else if (this._model == "4mic" || this._model == "6mic"){
 				this._numOfLeds = 12;
+			}else if (this._model == "4micL"){
+				this._numOfLeds = 0;	//4mic linear array has no APA102s (use pin 5 LED?)
 			}else{
 				this._numOfLeds = 1;
 			}
-			//TODO: add more
 		}
 		
 		//APA102 IC
