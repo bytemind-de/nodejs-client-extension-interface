@@ -1,5 +1,7 @@
-//required: sudo usermod -a -G spi $USER
+//might be required: sudo usermod -a -G spi $USER
 //double-check: ls -l /dev/spi*
+//if you have connection issues: activate SPI interface in OS, check pin 5
+const Gpio = require('onoff').Gpio;		//required for pin 5 voltage
 const spi = require('spi-device');
 
 /*
@@ -37,16 +39,41 @@ class GpioItem {
 	
 	constructor(options){
 		if (!options) options = {};
+		
+		this.isReady = false;
+		
 		//LED config
-		this._numOfLeds = options.numOfLeds || 3;		//2mic HAT has 3, 4mic has 12? ...
-		this._ledBits = this._numOfLeds * 4 + 8;		//BGRb + 4 start frame bits + 4 end frame bits
-		this._ledBuffer = Buffer.alloc(this._ledBits);	//full LEDs configuration
+		this._model = options.model || "2mic";			//2mic, 4mic, 6mic, 4micL
+		this._numOfLeds = options.numOfLeds;			//2mic HAT has 3, 4mic has 12? ...
+		if (this._numOfLeds == undefined){
+			if (this._model == "2mic"){
+				this._numOfLeds = 3;
+			}else if (this._model == "4mic" || this._model == "6mic"){
+				this._numOfLeds = 12;
+			}else if (this._model == "4micL"){
+				this._numOfLeds = 0;	//4mic linear array has no APA102s (use pin 5 LED?)
+			}else{
+				this._numOfLeds = 1;
+			}
+		}
 		
 		//APA102 IC
 		this.apa102;
 		this.apa102Speed = 4000000; //4Mhz
 		
-		this.isReady = false;
+		//SPI bus/device
+		this._spiBusAndDevice = [0, 0];					//TODO: e.g. 4mic uses [0, 1]
+		this.pin5 = undefined;
+		if (this._model == "4mic"){
+			this._spiBusAndDevice = [0, 1];
+			//activate pin 5 (required for some mic HATs)
+			this.pin5 = new Gpio(5, "out");
+			this.pin5.writeSync(1);
+		}
+
+		//init. LED buffer
+		this._ledBits = this._numOfLeds * 4 + 8;		//BGRb + 4 start frame bits + 4 end frame bits
+		this._ledBuffer = Buffer.alloc(this._ledBits);	//full LEDs configuration
 		
 		//set LED buffer
 		this.setLedBuffer = function(ledIndex, rgbRed, rgbGreen, rgbBlue, brightness){
@@ -80,11 +107,24 @@ class GpioItem {
 				}
 			});
 		}
+		//release pin 5
+		this.releasePin5 = function(){
+			if (this.pin5){
+				//reset pin 5
+				try {
+					this.pin5.writeSync(0);
+					this.pin5.unexport();
+				}catch (err){
+					//we ignore the error, just print it
+					console.error("GPIO-Interface: Failed to release pin 5 in 'rpi-respeaker-mic-hat-leds' item.", err);
+				}
+			}
+		}
 	}
 	
 	init(successCallback, errorCallback){
 		//bus 0, device 0
-		this.apa102 = spi.open(0, 0, err => {
+		this.apa102 = spi.open(this._spiBusAndDevice[0], this._spiBusAndDevice[1], err => {
 			if (err){
 				errorCallback(err);
 			}else{
@@ -142,13 +182,27 @@ class GpioItem {
 	
 	release(successCallback, errorCallback){
 		if (this.apa102){
-			this.apa102.close(function(err){
-				if (err){
-					errorCallback(err);
-				}else{
-					successCallback();
-				}
+			//switch all off
+			this.setBufferAll(0, 0, 0, 255);
+			var that = this;
+			this.transferBuffer(function(){
+				//close controller
+				that.apa102.close(function(err){
+					if (err){
+						errorCallback(err);
+					}else{
+						//try to release pin 5 (if required)
+						that.releasePin5();
+						successCallback();
+					}
+				});
+			}, function(err){
+				//try to release pin 5 anyway (if required)
+				that.releasePin5();
+				errorCallback(err);
 			});
+		}else if (this.pin5){
+			this.releasePin5();
 		}else{
 			successCallback();
 		}

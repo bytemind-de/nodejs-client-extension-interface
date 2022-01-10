@@ -16,6 +16,9 @@
     "BLE",
     "Eddystone",
     "Beacon",
+	"GPIO",
+	"Raspberry",
+	"Remote-Control",
     "Browser",
 	"Extension",
     "Client-Server"
