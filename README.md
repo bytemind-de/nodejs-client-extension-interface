@@ -93,7 +93,7 @@ Now you can run your server :-)
 sudo node server.js
 ```  
 You should see a confirmation that the server is running and that extensions have been loaded (and hopefully no error ^^).  
-The `sudo` command is required for Bluetooth control. If you want to run the server without sudo you have to grant the node binary cap_net_raw privileges:  
+The `sudo` command is required for Bluetooth control. If you want to run the server without sudo you have to grant node cap_net_raw privileges:  
 ```
 sudo setcap cap_net_raw+eip $(eval readlink -f `which node`)
 ```  

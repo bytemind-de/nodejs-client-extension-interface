@@ -1,6 +1,6 @@
 {
   "name": "clexi",
-  "version": "0.9.0",
+  "version": "0.9.1",
   "description": "Node.js CLEXI is a lightweight client extension interface that enhances connected clients with functions of the underlying operating system using a duplex, realtime Websocket connection.",
   "main": "server.js",
   "scripts": {
@@ -35,6 +35,7 @@
     "fastify-static": "^2.7.0",
     "fastify-ws": "^1.0.3",
     "onoff": "^6.0.3",
-    "spi-device": "^3.1.2"
+    "spi-device": "^3.1.2",
+    "usb": "^2.0.3"
   }
 }
