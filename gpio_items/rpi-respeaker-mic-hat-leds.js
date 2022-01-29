@@ -13,6 +13,7 @@ Required interface functions:
   - writeData(data, successCallback, errorCallback)
   - readData(options, successCallback, errorCallback)
   - release(successCallback, errorCallback)
+- test(options): Function to test item (init, write, read, release)
 */
 
 function description(){
@@ -27,12 +28,12 @@ function description(){
 			{name: "green", type: "number", min: 0, max: 255},
 			{name: "blue", type: "number", min: 0, max: 255}
 		],
-		info: "ReSpeaker-ish audio HAT LED control via APA102 IC."
+		info: "ReSpeaker-ish audio HAT APA102 LEDs interface."
 	};
 }
 
 class GpioItem {
-	//APA102 IC LEDs - ReSpeaker MIC HAT
+	//APA102 LEDs - ReSpeaker MIC HAT
 	//Reference:	https://github.com/respeaker/mic_hat/blob/master/interfaces/apa102.py
 	//Useful: 	https://github.com/jonnypage-d3/hooloovoo/blob/master/hooloovoo.js
 	//			https://github.com/respeaker/4mics_hat/issues/2#issuecomment-471563162
@@ -77,7 +78,7 @@ class GpioItem {
 		
 		//set LED buffer
 		this.setLedBuffer = function(ledIndex, rgbRed, rgbGreen, rgbBlue, brightness){
-			let currentLed = 4 + (ledIndex * 4)
+			let currentLed = 4 + (ledIndex * 4);
 			this._ledBuffer[currentLed + 1] = rgbBlue;
 			this._ledBuffer[currentLed + 2] = rgbGreen;
 			this._ledBuffer[currentLed + 3] = rgbRed;
@@ -209,7 +210,43 @@ class GpioItem {
 	}
 }
 
+//console test call example: node -e 'require("./rpi-respeaker-mic-hat-leds").test({init: {model: "2mic"}})'
+function test(options){
+	if (!options) options = {};
+	var desc = description();
+	console.log("GPIO Item Test: " + desc.info);
+	var gpioItem = new GpioItem(options.init || {
+		model: "", numOfLeds: 1
+	});
+	console.log("GPIO init");
+	gpioItem.init(function(){
+		console.log("GPIO init: success - NEXT: write");
+		gpioItem.writeData(options.write || {
+			ledIndex: 1, red: 150, green: 0, blue: 150
+		}, function(){
+			console.log("GPIO write: success - NEXT: read in 3s");
+			setTimeout(function(){
+				gpioItem.readData(options.read || {}, function(data){
+					console.log("GPIO read: success - data:", data, "- NEXT: release");
+					gpioItem.release(function(data){
+						console.log("GPIO release: success - Item test: DONE");
+					}, function(err){
+						console.error("GPIO release: error", err);
+					});
+				}, function(err){
+					console.error("GPIO read: error", err);
+				});
+			}, 3000);
+		}, function(err){
+			console.error("GPIO write: error", err);
+		});
+	}, function(err){
+		console.error("GPIO init: error", err);
+	});
+}
+
 module.exports = {
 	description: description,
-	GpioItem: GpioItem
+	GpioItem: GpioItem,
+	test: test
 };
