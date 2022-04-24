@@ -20,7 +20,8 @@ function description(){
 	return {
 		type: "ledArray",
 		options: [
-			{name: "numOfLeds", type: "number", min: 1}
+			{name: "numOfLeds", type: "number", min: 1},
+			{name: "model", type: "string", values: ["2mic", "4mic", "6mic", "4micL"]}
 		],
 		writeInterface: [
 			{name: "ledIndex", type: "number", min: 1},
@@ -161,7 +162,7 @@ class GpioItem {
 			errorCallback({name: "WrongLedIndex", message: ("LED index must be between 1 and " + this._numOfLeds)});
 		}else{
 			try {
-				let brightness = 255; 	//NOTE: we keep this constant because it quirky anyway
+				let brightness = 255; 	//NOTE: we keep this constant because its quirky anyway
 				let internalIndex = data.ledIndex - 1;
 				this.setLedBuffer(internalIndex, +data.red, +data.green, +data.blue, brightness);
 				//write
