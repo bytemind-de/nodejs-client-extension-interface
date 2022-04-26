@@ -1,9 +1,15 @@
 # Changelog for CLEXI - Client Extension Interface
 
+## v0.9.2
+* New gpio-itme 'rpi-spi-rgb-leds' to control WS281X and APA102 LEDs via GPIO SPI
+* Improved self-signed SSL script
+* Added 'color' lib to dependencies
+
 ## v0.9.1
 * Added package 'usb' to interface with USB devices
 * Added custom gpio-item example 'respeaker-usb-array-v2' to control the LED array of a ReSpeaker Mic Array v2.0 via USB
 * Added 'test(options)' to GPIO interface, e.g. for local testing
+* Added 'hasSubscription' function to Client v0.9.1
 
 ## v0.9.0
 * Switched to Node.js 14 as officially supported version and changed repository for 'node-beacon-scanner' to more up-to-date version

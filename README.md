@@ -2,11 +2,11 @@
 Node.js CLEXI is a lightweight **cl**ient **ex**tension **i**nterface that enhances connected clients with functions of the underlying operating system using a duplex, realtime Websocket connection.  
   
 Currently available extensions (activate via settings):
-* clexi-broadcaster - a simple Websocket message broadcaster
-* clexi-http-events - receives HTTP events via '/event' endpoint and broadcasts them via the Websocket connection
-* ble-beacon-scanner - scans for Bluetooth BLE beacons and broadcasts their data
-* runtime-commands - execute runtime commands
-* gpio-interface - register Raspberry Pi GPIO items (buttons, LEDs, custom), send and receive data
+* clexi-broadcaster - a simple **Websocket message** broadcaster
+* clexi-http-events - receives **HTTP events** via '/event' **endpoint** and broadcasts them via the Websocket connection
+* ble-beacon-scanner - scans for **Bluetooth BLE beacons** and broadcasts their data
+* runtime-commands - execute **runtime commands**
+* gpio-interface - register **Raspberry Pi GPIO** items (buttons, LEDs, pins, SPI, custom), send and receive data
 
 CLEXI works as a web-server as well and can host the client application if required (e.g. just put the files in the www folder).
 
@@ -64,7 +64,7 @@ You can change your hostname via the raspi-config tool.
   
 Optional: Generate some self-signed SSL certificates for your CLEXI server:  
 ```
-sh generate_ssl_cert.sh
+bash generate_ssl_cert.sh
 ```  
 The tool will ask you for some info. By pressing RETURN you can keep most of the default values, just for `common name` choose your hostname (or 'localhost').  
 If you use SSL make sure to set `"ssl": true` inside the settings.
