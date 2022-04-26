@@ -61,14 +61,14 @@ class GpioItem {
 		if (this._ledType == "ws281x"){
 			//WS281X
 			this.typeSupported = true;
-			this._spiMaxSpeed = 10000000; 	//10Mhz (100ns) - TODO: no idea why this works O_o
-			this._ledBytes = this._numOfLeds * 9;		//8 bits per RGB * 3 for PWM
+			this._spiMaxSpeed = 4760000; 			//4.76Mhz core speed (we choose this just to get a multiple (2) of target)
+			this._ledBytes = this._numOfLeds * 9;	//8 bits per RGB * 3 for pulse shape (100 = 0, 110 = 1)
 			this._spiOptions = {
 				maxSpeedHz: this._spiMaxSpeed
 			}
 			this._spiMsgOptions = {
-				microSecondDelay: 50
-				//speedHz: this._spiMaxSpeed
+				//microSecondDelay: 0
+				speedHz: 2380000					//2.38Mhz target speed (core/2) for 420ns per bit
 			}
 			
 		}else if (this._ledType == "apa102"){
@@ -80,7 +80,7 @@ class GpioItem {
 				maxSpeedHz: this._spiMaxSpeed
 			}
 			this._spiMsgOptions = {
-				//speedHz: this._spiMaxSpeed
+				speedHz: this._spiMaxSpeed
 			}
 			
 		}else{
@@ -97,25 +97,25 @@ class GpioItem {
 			if (this._ledType == "ws281x"){
 				//GRB colors
 				let currentLed = ledIndex * 9;
-				let colors = [rgbGreen, rgbRed, rgbBlue];	//RGB to GRB array
+				let colors = [Math.min(248, rgbGreen), Math.min(248, rgbRed), Math.min(248, rgbBlue)];	//RGB to GRB array - limit to 248 (255 is weird color shift)
 				
-				//convert color data to ws281x PWM wave represented by string of binary
+				//convert color data to ws281x compatible pulses (see specs) so that each bit is 420ns
 				let pwmBits = colors.map(function(color){
 					//convert each color component to binary octet and map to ws281x signal
 					let cBits = color.toString(2).padStart(8, 0);	//color as 8 bits string
 					return Array.from(cBits).map(function(bit){
-						//embed each bit into 1x0, result: (1 0 0) => 0, (1 1 0) => 1
+						//embed each bit into 1x0, result: (1 0 0) => 0, (1 1 0) => 1	|-|__ and |--|_
 						return ("1" + bit + "0");
 					}).join("");
 				}).join("");
 				
 				//binary wave for this index
 				let waveBinary = pwmBits.split("");
-				//convert bits to bytes
+				//convert 8-bits to 1-byte each to get our buffer hex values
 				let n = 0;
 				while (waveBinary.length){
 					let octet = waveBinary.splice(0, 8).join("");	//next 8 bits
-					let num = parseInt(octet, 2);	//number (0 - 255)
+					let num = parseInt(octet, 2);
 					//console.log("ledIndex: " + ledIndex + ", n: " + n + ", value: " + num);		//DEBUG
 					this._ledBuffer[currentLed + n] = num;
 					n++;
@@ -180,12 +180,8 @@ class GpioItem {
 				this.transferBuffer(function(){
 					//done
 					that.isReady = true;
-					if (that._ledType == "ws281x"){
-						//it looks like we have to wait 1s or the first write is faulty
-						setTimeout(function(){ successCallback(); }, 1000);
-					}else{
-						successCallback();
-					}
+					successCallback();
+					
 				}, errorCallback);
 			}
 		});

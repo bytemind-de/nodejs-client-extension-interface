@@ -3,6 +3,7 @@
 ## v0.9.2
 * New gpio-itme 'rpi-spi-rgb-leds' to control WS281X and APA102 LEDs via GPIO SPI
 * Improved self-signed SSL script
+* Added 'color' lib to dependencies
 
 ## v0.9.1
 * Added package 'usb' to interface with USB devices
