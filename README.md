@@ -92,7 +92,9 @@ To load specific extensions ajust the array: `"xtensions": [...]`. For example i
 
 Available log levels: `debug`, `info`, `warn`, `error`  
   
-For tips to get started with Bluetooth-Low-Energy (BLE) check out [node-beacon-scanner](https://github.com/bytemind-de/node-beacon-scanner/tree/master/examples).
+For tips to get started with Bluetooth-Low-Energy (BLE) check out [node-beacon-scanner](https://github.com/bytemind-de/node-beacon-scanner/tree/master/examples).  
+  
+Examples for CLEXI GPIO interface configurations can be found in the [SEPIA Client settings help](https://github.com/SEPIA-Framework/sepia-html-client-app/blob/master/Settings.md#gpio-interface---led-controls).
 
 ### Run the server
 
@@ -181,3 +183,13 @@ CLEXI will then broadcast the data as following message object to all Websocket 
 ## Version history
 
 See [changelog](CHANGELOG.md)
+
+## Credits
+
+* [RPI-IO](https://github.com/gdorbes/rpi-io) - Library to read GPIO events and write states
+* [noble](https://github.com/stoprocent/noble) - Node.js BLE (Bluetooth Low Energy) central module
+* [node-beacon-scanner](https://github.com/bytemind-de/node-beacon-scanner) - Wrapper around 'noble' to handle BLE beacon events
+* [spi-device](https://github.com/fivdi/spi-device) - SPI serial bus access with Node.js
+* [usb](https://github.com/node-usb/node-usb) - USB library for Node.js
+* [SEPIA](https://github.com/SEPIA-Framework) - S.E.P.I.A. Open Assistant and Framework
+ 
