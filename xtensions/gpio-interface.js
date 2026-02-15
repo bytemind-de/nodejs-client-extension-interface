@@ -119,7 +119,8 @@ GpioInterface = function(onStartCallback, onEventCallback, onErrorCallback){
 		var id = config.id || (pin + "");
 		var edge = config.edge || "both";
 		var bias = config.options?.bias || "pull-up";
-		var bounce = config.options?.bounce || 0;	//threshold [ms] to filter consecutive events of same type
+		var pullType = (bias == "pull-up")? 1 : 2;
+		var bounce = config.options?.bounce || 100;	//threshold [ms] to filter consecutive events of same type
 		if (buttons[id]){
 			onButtonError("Button already registered", 423, msgId);
 			//NOTE: if the PIN is already in use, the lib will throw the error (I think)
@@ -136,10 +137,14 @@ GpioInterface = function(onStartCallback, onEventCallback, onErrorCallback){
 				buttons[id].clexiInfo = { id: id, pin: pin };
 				buttons[id].monitoringStart((triggeredEdge) => {
 					var val = 0;
-					if (triggeredEdge == edge || triggeredEdge == "rising"){
-						//value is 1 if we either match the monitored edge or see "rising" (edge == "both")
+					if (triggeredEdge == edge){
+						//value is 1 if we match the monitored edge
 						val = 1;
-					}						
+					}else if (triggeredEdge == "rising"){
+						val = (pullType == 1)? 0 : 1;
+					}else{
+						val = (pullType == 1)? 1 : 0;
+					}
 					broadcast({
 						type: "button",
 						id: id,
@@ -223,7 +228,7 @@ GpioInterface = function(onStartCallback, onEventCallback, onErrorCallback){
 		if (typeof pin == "number"){
 			try {
 				//register LED
-				leds[id] = new RIO(pin, mode, { value: initialValue });
+				leds[id] = new RIO(pin, direction, { value: initialValue });
 				leds[id].clexiInfo = {id: id, pin: pin};
 				broadcast({
 					type: "ledRegister",
@@ -516,7 +521,7 @@ GpioInterface = function(onStartCallback, onEventCallback, onErrorCallback){
 			//handle action
 			if (type == "button"){
 				if (action == "register"){
-					//config: id (any name), pin (number), direction (in, out, high, low), edge (none, rising, falling, both), options
+					//config: id (any name), pin (number), edge (rising, falling, both), options
 					return registerButton(config, msgId);
 				}else if (action == "release"){
 					//config: id (any name), pin (number)
@@ -524,7 +529,7 @@ GpioInterface = function(onStartCallback, onEventCallback, onErrorCallback){
 				}
 			}else if (type == "led"){
 				if (action == "register"){
-					//config: id (any name), pin (number)
+					//config: id (any name), pin (number), options
 					return registerLed(config, msgId);
 				}else if (action == "release"){
 					//config: id (any name), pin (number)
