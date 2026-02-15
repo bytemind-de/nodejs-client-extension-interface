@@ -20,7 +20,7 @@
 	<script type="text/javascript" src="js/jquery-3.1.1.min.js" charset="UTF-8"></script>
 	<link rel="stylesheet" href="css/main.css">
 	-->
-	<script type="text/javascript" src="lib/clexi-0.9.1.js" charset="UTF-8"></script>
+	<script type="text/javascript" src="lib/clexi-0.10.0.js" charset="UTF-8"></script>
 	<style>
 	html {
 		height: 100%;
@@ -188,7 +188,7 @@
 			if (!hostURL) hostURL = location.origin;
 			else hostURL = hostURL.replace(/^wss/, 'https').replace(/^ws/, 'http');
 			var pingUrl = hostURL + "/ping";
-			log("Sending ping request to: " + pingUrl);
+			log("Sending ping request to: " + pingUrl + " ...");
 			ClexiJS.httpRequest("GET", pingUrl, function(data){
 				//Success
 				log("HTTP GET result to 'ping' endpoint: " + data);

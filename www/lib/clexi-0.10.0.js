@@ -2,7 +2,7 @@
 var ClexiJS = (function(){
 	var Clexi = {};
 	
-	Clexi.version = "0.9.1";
+	Clexi.version = "0.10.0";
 	Clexi.serverId = "";		//if you set this the client will check the server ID on welcome event and close connection if not identical
 	
 	//Extension subscriptions
