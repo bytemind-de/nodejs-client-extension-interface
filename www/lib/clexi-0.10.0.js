@@ -119,7 +119,13 @@ var ClexiJS = (function(){
 		ws.onmessage = function(me){
 			//console.log(me);
 			msg = JSON.parse(me.data);
-			if (Clexi.onDebug) Clexi.onDebug('CLEXI received msg of type: ' + msg.type);
+			if (Clexi.onDebug){
+				if (!msg.type || msg.type == "undefined"){
+					Clexi.onDebug('CLEXI received msg of type: ' + msg.type + " - Res.: " + msg.response);
+				}else{
+					Clexi.onDebug('CLEXI received msg of type: ' + msg.type);
+				}
+			}
 			
 			//check xtensions first
 			if (readyToAcceptEvents && subscriptions[msg.type]){

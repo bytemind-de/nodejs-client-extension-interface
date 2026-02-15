@@ -10,6 +10,15 @@ const fastify_ws = require('@fastify/websocket');
 const version = "0.10.0";
 const settings = require('./settings.json');
 
+//Common xtensions
+const commonXtensions = [
+	"clexi-broadcaster",
+	"clexi-http-events",
+	"ble-beacon-scanner",
+	"runtime-commands",
+	"gpio-interface"
+];
+
 var Clexi = function(customSettings){
 	var ClexiServer = {};
 	
@@ -272,10 +281,17 @@ var Clexi = function(customSettings){
 				
 				//undefined
 				}else{
-					socket.send(JSON.stringify({
-						response: ("Unknown message type: " + msgObj.type),
-						type: "undefined"
-					}));
+					if (msgObj.type && commonXtensions.includes(msgObj.type)){
+						socket.send(JSON.stringify({
+							response: ("Xtension with name '" + msgObj.type + "' is not enabled. Please check your settings."),
+							type: "undefined"
+						}));
+					}else{
+						socket.send(JSON.stringify({
+							response: ("Unknown message type: " + msgObj.type),
+							type: "undefined"
+						}));
+					}
 				}
 			}catch(e){
 				server.log.error("Socket Message Error: " + e.message);
