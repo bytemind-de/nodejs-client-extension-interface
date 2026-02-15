@@ -38,17 +38,21 @@ See client and extensions section below to get more info.
 ## Raspberry Pi 4 installation
 
 Requirements:  
-* Node.js (v0.9.0+ should **use 14** - v0.8.2 was tested with 9.11.2 and 10.15.3)
-* Some packages for Bluetooth etc.: `sudo apt-get install bluetooth bluez libbluetooth-dev libudev-dev libnss3-tools libcap2-bin openssl procps`
-* To install Node packages you might need: `sudo apt-get install build-essential`
-* SSL certificates for HTTPS (you can use the included script to generate self-signed)
+* Node.js v20.19.0+ (for very old systems you could try the legacy branch that worked with Node.js v14)
+* Some packages for Bluetooth etc.: `sudo apt-get install bluetooth bluez libudev-dev libnss3-tools libcap2-bin openssl procps`
+* To compile Node packages you might need: `sudo apt-get install build-essential libgpiod-dev libbluetooth-dev`
+* For SSL the recommended way is to use Nginx as proxy, but you can use the included script to generate self-signed certificates
 
-### Install Node.js 14
+### Install Node.js v20.19.0+
 
-You can use the official script:
+On Raspberry Pi OS 13 (Trixie) you can simply use:
+- `sudo apt install nodejs npm` (should be at least v20.19.5)
+
+If you need more control or a newer version, get the Node Version Manager NVM:
 ```
-curl -fsSL https://deb.nodesource.com/setup_14.x | sudo -E bash -
-sudo apt-get install -y nodejs
+curl -o- https://raw.githubusercontent.com | bash
+source ~/.bashrc
+nvm install --lts
 ```
 
 ### Install CLEXI
@@ -62,7 +66,7 @@ npm install
 Decide which hostname you want to use for your server. Default is `localhost` but I usually prefer `raspberrypi.local` (default hostname of RPi) to make CLEXI available to all devices in the network.  
 You can change your hostname via the raspi-config tool.  
   
-Optional: Generate some self-signed SSL certificates for your CLEXI server:  
+Optional: Generate self-signed SSL certificates for your CLEXI server:  
 ```
 bash generate_ssl_cert.sh
 ```  
