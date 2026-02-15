@@ -1,5 +1,5 @@
 const BeaconScanner = require('node-beacon-scanner');
-const noble = require('@abandonware/noble');
+const noble = require('@stoprocent/noble');
 const scanner = new BeaconScanner({'noble': noble});
 
 /**

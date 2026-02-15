@@ -1,4 +1,4 @@
-const Gpio = require('onoff').Gpio;
+const { RIO } = require('rpi-io');
 
 /**
 * This extension can send control events to the GPIO pins of a Raspberry Pi
@@ -60,6 +60,7 @@ GpioInterface = function(onStartCallback, onEventCallback, onErrorCallback){
 		var shouldRelease = Object.keys(buttons).length + Object.keys(leds).length + Object.keys(items).length;
 		var hasReleased = 0;
 		console.log("GPIO-Interface: Releasing " + shouldRelease + " registered GPIO handlers.");		//DEBUG
+		//NOTE: we could use 'RIO.closeAll()' to release all buttons and LEDs at the same time
 		//buttons
 		Object.values(buttons).forEach(function(btn){
 			try{ btn.unexport(); hasReleased++; }catch(err){}
@@ -116,34 +117,37 @@ GpioInterface = function(onStartCallback, onEventCallback, onErrorCallback){
 	function registerButton(config, msgId){
 		var pin = (config.pin != undefined)? +config.pin : undefined;
 		var id = config.id || (pin + "");
-		var direction = config.direction || "in";
 		var edge = config.edge || "both";
+		var bias = config.options?.bias || "pull-up";
+		var bounce = config.options?.bounce || 0;	//threshold [ms] to filter consecutive events of same type
 		if (buttons[id]){
 			onButtonError("Button already registered", 423, msgId);
-			//TODO: should this be limited to 'id' or to 'pin'?
+			//NOTE: if the PIN is already in use, the lib will throw the error (I think)
 			return "sent";
 		}
-		console.log("GPIO-Interface: registerButton", id, pin, direction, edge);		//DEBUG
+		console.log("GPIO-Interface: registerButton", id, pin, edge);		//DEBUG
 		if (typeof pin == "number" 
-			&& ["in", "out", "high", "low"].indexOf(direction) >= 0
-			&& ["none", "rising", "falling", "both"].indexOf(edge) >= 0
+			&& ["rising", "falling", "both"].indexOf(edge) >= 0
+			&& ["disable", "pull-up", "pull-down"].indexOf(bias) >= 0
 		){
 			try {
 				//register button listener
-				buttons[id] = new Gpio(pin, direction, edge, config.options);
-				buttons[id].clexiInfo = {id: id, pin: pin};
-				buttons[id].watch(function(err, value){
-					if (err){
-						onButtonError(err.message || err.name || "Button error", 500, id);
-					}else{
-						broadcast({
-							type: "button",
-							id: id,
-							pin: pin,
-							value: value
-						});
-					}
-				});
+				buttons[id] = new RIO(pin, "input", { bias: bias });		
+				buttons[id].clexiInfo = { id: id, pin: pin };
+				buttons[id].monitoringStart((triggeredEdge) => {
+					var val = 0;
+					if (triggeredEdge == edge || triggeredEdge == "rising"){
+						//value is 1 if we either match the monitored edge or see "rising" (edge == "both")
+						val = 1;
+					}						
+					broadcast({
+						type: "button",
+						id: id,
+						pin: pin,
+						value: val
+					});
+				}, edge, bounce);
+				
 				broadcast({
 					type: "buttonRegister",
 					msgId: msgId,
@@ -151,8 +155,8 @@ GpioInterface = function(onStartCallback, onEventCallback, onErrorCallback){
 					pin: pin
 				});
 			}catch (err){
-				if (!err) err = {message: "Failed to register button"};
-				onButtonError(err.message || err.name || "Failed to register button", 500, msgId);
+				if (!err) err = {message: "Failed to register LED"};
+				onButtonError(err.message || err.name || "Failed to register LED", 500, msgId);
 			}
 		}else{
 			onButtonError("Invalid button configuration", 400, msgId);
@@ -164,8 +168,8 @@ GpioInterface = function(onStartCallback, onEventCallback, onErrorCallback){
 		var id = config.id || (pin + "");
 		if (buttons[id]){
 			try {
-				buttons[id].unwatchAll();
-				buttons[id].unexport();		//TODO: after this we "should" not register same pin again?!?
+				//stop monitoring and release resources
+				buttons[id].close(); 
 				delete buttons[id];
 				broadcast({
 					type: "buttonRelease",
@@ -174,8 +178,8 @@ GpioInterface = function(onStartCallback, onEventCallback, onErrorCallback){
 					pin: pin
 				});
 			}catch (err){
-				if (!err) err = {message: "Failed to release button"};
-				onButtonError(err.message || err.name || "Failed to release button", 500, msgId);
+				if (!err) err = {message: "Failed to release LED"};
+				onButtonError(err.message || err.name || "Failed to release LED", 500, msgId);
 			}
 		}else{
 			broadcast({
@@ -207,17 +211,19 @@ GpioInterface = function(onStartCallback, onEventCallback, onErrorCallback){
 	function registerLed(config, msgId){
 		var pin = (config.pin != undefined)? +config.pin : undefined;
 		var id = config.id || (pin + "");
-		var direction = "out";
+		//NOTE: during the port from 'onoff' to 'rpi-io', options "high" and "low" have been removed
+		var direction = "output";
+		var initialValue = config.options?.value || 0;
 		if (leds[id]){
 			onLedError("LED already registered", 423, msgId);
-			//TODO: should this be limited to 'id' or to 'pin'?
+			//NOTE: if the PIN is already in use, the lib will throw the error (I think)
 			return "sent";
 		}
 		console.log("GPIO-Interface: registerLed", id, pin);		//DEBUG
 		if (typeof pin == "number"){
 			try {
 				//register LED
-				leds[id] = new Gpio(pin, direction);
+				leds[id] = new RIO(pin, mode, { value: initialValue });
 				leds[id].clexiInfo = {id: id, pin: pin};
 				broadcast({
 					type: "ledRegister",
@@ -239,7 +245,7 @@ GpioInterface = function(onStartCallback, onEventCallback, onErrorCallback){
 		var id = config.id || (pin + "");
 		if (leds[id]){
 			try {
-				leds[id].unexport();		//TODO: after this we "should" not register same pin again?!?
+				leds[id].close();
 				delete leds[id];
 				broadcast({
 					type: "ledRelease",
@@ -264,25 +270,21 @@ GpioInterface = function(onStartCallback, onEventCallback, onErrorCallback){
 	function setLed(config, msgId){
 		var pin = (config.pin != undefined)? +config.pin : undefined;
 		var id = config.id || (pin + "");
-		var val = config.value;
-		if (val == undefined){
+		if (config.value == undefined){
 			onLedError("Invalid or missing value for 'set' action.", 400, msgId);
 			return "sent";
 		}
+		var val = (config.value == 1 || config.value === true)? 1 : 0;
 		if (leds[id]){
 			try {
-				leds[id].write(val, function(err){
-					if (err) {
-						if (!err) err = {message: "Failed to set LED"};
-						onLedError(err.message || err.name || "Failed to set LED", 500, msgId, id, "set");
-					}else{
-						broadcast({
-							type: "ledSet",
-							msgId: msgId,
-							id: id,
-							set: val
-						});
-					}
+				//rpi-io: write() is synchronous
+				leds[id].write(val);
+
+				broadcast({
+					type: "ledSet",
+					msgId: msgId,
+					id: id,
+					set: val
 				});
 			}catch (err){
 				if (!err) err = {message: "Failed to set LED"};

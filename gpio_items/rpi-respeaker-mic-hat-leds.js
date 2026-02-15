@@ -1,7 +1,7 @@
 //might be required: sudo usermod -a -G spi $USER
 //double-check: ls -l /dev/spi*
 //if you have connection issues: activate SPI interface in OS, check pin 5
-const Gpio = require('onoff').Gpio;		//required for pin 5 voltage
+const { RIO } = require('rpi-io');	//required for pin 5 voltage
 const spi = require('spi-device');
 
 /*
@@ -69,8 +69,8 @@ class GpioItem {
 		if (this._model == "4mic"){
 			this._spiBusAndDevice = [0, 1];
 			//activate pin 5 (required for some mic HATs)
-			this.pin5 = new Gpio(5, "out");
-			this.pin5.writeSync(1);
+			this.pin5 = new RIO(5, "output");
+			this.pin5.write(1);
 		}
 
 		//init. LED buffer
@@ -114,8 +114,8 @@ class GpioItem {
 			if (this.pin5){
 				//reset pin 5
 				try {
-					this.pin5.writeSync(0);
-					this.pin5.unexport();
+					this.pin5.write(0);
+					this.pin5.close();
 				}catch (err){
 					//we ignore the error, just print it
 					console.error("GPIO-Interface: Failed to release pin 5 in 'rpi-respeaker-mic-hat-leds' item.", err);
