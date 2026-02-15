@@ -16,16 +16,16 @@
     "BLE",
     "Eddystone",
     "Beacon",
-	"GPIO",
-	"Raspberry",
-	"Remote-Control",
+    "GPIO",
+    "Raspberry",
+    "Remote-Control",
     "Browser",
-	"Extension",
+    "Extension",
     "Client-Server",
-	"SPI",
-	"LED",
-	"APA102",
-	"WS281X"
+    "SPI",
+    "LED",
+    "APA102",
+    "WS281X"
   ],
   "author": "Bytemind.de",
   "license": "MIT",
@@ -37,13 +37,13 @@
     "node": ">=20.19.0"
   },
   "dependencies": {
+    "fastify": "^5.7.4",
+    "@fastify/static": "^8.3.0",
+    "@fastify/websocket": "^11.2.0",
     "node-beacon-scanner": "git+https://github.com/bytemind-de/node-beacon-scanner.git",
-    "fastify": "^2.15.3",
-    "fastify-static": "^2.7.0",
-    "fastify-ws": "^1.0.3",
-    "rpi-io": "^2.0.10",
     "spi-device": "^3.1.2",
-    "usb": "^2.0.3",
-	"color": "^4.2.3"
+    "usb": "^2.17.0",
+    "color": "^5.0.3",
+    "rpi-io": "^2.0.10"
   }
 }

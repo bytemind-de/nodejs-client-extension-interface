@@ -3,8 +3,8 @@
 const path = require('path');
 const fs = require('fs');
 const fastify = require('fastify');
-const fastify_static = require('fastify-static');
-const fastify_ws = require('fastify-ws');
+const fastify_static = require('@fastify/static');
+const fastify_ws = require('@fastify/websocket');
 
 //Server
 const version = "0.10.0";
@@ -21,7 +21,7 @@ var Clexi = function(customSettings){
 	var idIsPassword = customSettings.idIsPassword || settings.idIsPassword || false;
 	
 	var sslCertPath = customSettings.sslCertPath || path.join(__dirname, "ssl");
-	var wwwPath = customSettings.wwwPath || path.join(__dirname, "www");
+	var wwwPath = path.join(__dirname, customSettings.wwwPath || "www");
 	var defaultXtensionsPath = path.join(__dirname, 'xtensions');
 	var customXtensionsPath = customSettings.customXtensionsPath || defaultXtensionsPath;
 	var customXtensions = customSettings.customXtensions || [];
@@ -49,11 +49,13 @@ var Clexi = function(customSettings){
 	const server = fastify(server_options);
 	ClexiServer.fastify = server;
 
-	//Plugins
+	//Register static files plugin and path
 	server.register(fastify_static, { 
 		root: wwwPath,
-		redirect: false 	//for fastify 2 security - see: https://github.com/advisories/GHSA-p6vg-p826-qp3v
+		redirect: false
 	});
+	
+	//Register Websocket plugin
 	server.register(fastify_ws);
 
 	//Xtensions
@@ -118,32 +120,29 @@ var Clexi = function(customSettings){
 			//single receiver?
 			var client = data.receiver;
 			delete data.receiver; 	//remove object before sending
-			if (!idIsPassword || (idIsPassword && client.authState)){
-				if (typeof data === "object"){
-					client.send(JSON.stringify(data));
-				}else{
-					client.send(data);
-				}
-			}else{
-				server.log.error("Tried to broadcast to unauthorized client. Client should be disconnected already!");
-				client.terminate();
-			}
+			sendToClient(client, data);
 		}else{
 			//broadcast to all
-			server.ws.clients.forEach(function each(client){
-				if (client.readyState === 1) {		//WebSocket.OPEN should be 1
-					if (!idIsPassword || (idIsPassword && client.authState)){
-						if (typeof data === "object"){
-							client.send(JSON.stringify(data));
-						}else{
-							client.send(data);
-						}
-					}else{
-						server.log.error("Tried to broadcast to unauthorized client. Client should be disconnected already!");
-						client.terminate();
+			if (server.websocketServer){
+				server.websocketServer.clients.forEach(function each(client){
+					if (client.readyState === 1) {
+						sendToClient(client, data);
 					}
-				}
-			});
+				});
+			}
+		}
+	}
+	function sendToClient(client, data){
+		if (!idIsPassword || (idIsPassword && client.authState)){
+			if (typeof data === "object"){
+				client.send(JSON.stringify(data));
+			}else{
+				client.send(data);
+			}
+		}else{
+			//make sure all unauthorized clients are removed
+			server.log.error("Tried to broadcast to unauthorized client. Client should be disconnected already!");
+			client.terminate();
 		}
 	}
 	
@@ -198,10 +197,103 @@ var Clexi = function(customSettings){
 			reply.send();
 		}
 	}
+	
+	//Websocket interface
+	server.register(async function(fastify){
+		//default
+		fastify.get('/', {websocket: true}, (socket, request) => {
+			handleWebsocketReq(socket, request, '/');
+		});
+		//popular client path
+		fastify.get('/clexi', {websocket: true}, (socket, request) => {
+			handleWebsocketReq(socket, request, '/clexi');
+		});
+		//fallback for common proxy paths
+		fastify.get('/ws', {websocket: true}, (socket, request) => {
+			handleWebsocketReq(socket, request, '/ws');
+		});
+	});
+	function handleWebsocketReq(socket, request, path){
+		server.log.info("Client connected via WebSocket path '" + path + "'.");
+		
+		socket.on('message', function(msg){
+			try {
+				//msg is a buffer
+				let msgObj = JSON.parse(msg.toString());
+				
+				//Handle extensions input
+				if (msgObj.type && xtensions[msgObj.type]){
+					server.log.info('Calling xtensions: ' + msgObj.type);
+					let response = xtensions[msgObj.type].input(msgObj, socket);
+					if (response){
+						socket.send(JSON.stringify({
+							response: response,
+							type: msgObj.type,
+							id: msgObj.id
+						}));
+					}
+					
+				//Welcome
+				}else if (msgObj.type == "welcome"){
+					//check server ID
+					if (msgObj.data && msgObj.data.server_id == serverId){
+						socket.authState = true;
+					}
+					if (!idIsPassword){
+						socket.send(JSON.stringify({
+							type: "welcome",
+							code: 200,
+							info: {
+								id: serverId,
+								version: ("CLEXI Node.js server v" + version),
+								xtensions: getXtensionsInfo()
+							}
+						}));
+					}else if (idIsPassword && socket.authState){
+						socket.send(JSON.stringify({
+							type: "welcome",
+							code: 200,
+							info: {
+								version: ("CLEXI Node.js server v" + version),
+								xtensions: getXtensionsInfo()
+							}
+						}));
+					}else{
+						socket.send(JSON.stringify({
+							type: "welcome",
+							code: 401,
+							info: {
+								msg: "not authorized",
+								version: ("CLEXI Node.js server v" + version)
+							}
+						}));
+						//socket.terminate();	//the client should gracefully disconnect O_O
+					}
+				
+				//undefined
+				}else{
+					socket.send(JSON.stringify({
+						response: ("Unknown message type: " + msgObj.type),
+						type: "undefined"
+					}));
+				}
+			}catch(e){
+				server.log.error("Socket Message Error: " + e.message);
+			}
+		});
+
+		socket.on('close', function(){
+			server.log.info('Client disconnected.');
+		});
+		
+		socket.on('error', function(e){
+			server.log.error(`Client error: ${e.message}`);
+		});
+	}
 
 	//Run the server
 	ClexiServer.start = function(){
-		server.listen(port, hostname, function(err, address){
+		server.listen({port: port, host: hostname}, function(err, address){
 			if (err){
 				server.log.error(err);
 				process.exit(1);
@@ -211,87 +303,12 @@ var Clexi = function(customSettings){
 			console.log(`Hostname: ${hostname} - SSL: ${useSsl}`);
 			server.log.info(`Server running at ${address}`);
 			
-			//Websocket interface
-			server.ws.on('connection', function(socket, request){
-				server.log.info('Client connected.');
-				
-				//CLIENT INPUT
-				socket.on('message', function(msg){
-					let msgObj = JSON.parse(msg);
-					
-					//Handle extensions input
-					if (msgObj.type && xtensions[msgObj.type]){
-						server.log.info('Calling xtensions: ' + msgObj.type);
-						let response = xtensions[msgObj.type].input(msgObj, socket);
-						if (response){
-							socket.send(JSON.stringify({
-								response: response,
-								type: msgObj.type,
-								id: msgObj.id
-							}));
-						}
-						
-					//Welcome
-					}else if (msgObj.type && msgObj.type == "welcome"){
-						//check server ID
-						if (msgObj.data && msgObj.data.server_id && msgObj.data.server_id == serverId){
-							socket.authState = true;
-						}
-						if (!idIsPassword){
-							socket.send(JSON.stringify({
-								type: "welcome",
-								code: 200,
-								info: {
-									id: serverId,
-									version: ("CLEXI Node.js server v" + version),
-									xtensions: getXtensionsInfo()
-								}
-							}));
-						}else if (idIsPassword && socket.authState){
-							socket.send(JSON.stringify({
-								type: "welcome",
-								code: 200,
-								info: {
-									version: ("CLEXI Node.js server v" + version),
-									xtensions: getXtensionsInfo()
-								}
-							}));
-						}else{
-							socket.send(JSON.stringify({
-								type: "welcome",
-								code: 401,
-								info: {
-									msg: "not authorized",
-									version: ("CLEXI Node.js server v" + version)
-								}
-							}));
-							//socket.terminate();	//the client should gracefully disconnect O_O
-						}
-					
-					//undefined
-					}else{
-						socket.send(JSON.stringify({
-							response: ("Unknown message type: " + msgObj.type),
-							type: "undefined"
-						}));
-					}
-				});
-				
-				socket.on('close', function(){
-					server.log.info('Client disconnected.');
-				});
-				
-				socket.on('error', function(e){
-					server.log.error(`Client error: ${e.message}`);
-				});
-			});
-			
 			//Load extensions
 			loadXtensions();
 		});
 	}
 	
-	ClexiServer.stop = server.close;
+	ClexiServer.stop = () => server.close();
 	
 	return ClexiServer;
 }

@@ -5,6 +5,7 @@
 * Replaced deprecated 'onoff' package with 'rpi-io' for GPIO control
 * Replaced out-dated package '@abandonware/noble' with '@stoprocent/noble'
 * Replaced out-dated package 'node-beacon-scanner' with custom fork
+* Migrated to fastify v5 and updated several other packages
 
 ## v0.9.2
 * New gpio-itme 'rpi-spi-rgb-leds' to control WS281X and APA102 LEDs via GPIO SPI
