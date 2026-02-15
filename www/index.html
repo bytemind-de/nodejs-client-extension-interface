@@ -108,6 +108,16 @@
 			<button onclick="websocketSetAllRandomGpioRespeakerMicHat();">All Random</button>
 			<button onclick="websocketSetAllOffGpioRespeakerMicHat();">All Off</button>
 		</div>
+		<div>
+			<label>Proto Voice HAT LEDs (SPI WS281X):</label>
+			<button onclick="websocketRegisterGpioProtoVoiceHat();">Register</button>
+			<button onclick="websocketReleaseGpioProtoVoiceHat();">Release</button>
+			<button onclick="websocketGetGpioProtoVoiceHat();">Get</button>
+			<button onclick="websocketSetGpioProtoVoiceHat(1, 0, 150, 0);">(1) Green</button>
+			<button onclick="websocketSetGpioProtoVoiceHat(1, 100, 100, 0);">(1) Yellow</button>
+			<button onclick="websocketSetGpioProtoVoiceHat(1, 150, 0, 0);">(1) Red</button>
+			<button onclick="websocketSetGpioProtoVoiceHat(1, 0, 0, 0);">(1) Off</button>
+		</div>
 	</div>
 	<h4>Client log: <button onclick="document.getElementById('log-out').innerHTML = '';">clear</button></h4>
 	<div id="log-out"><p>Welcome - Please connect.</p></div>
@@ -310,6 +320,30 @@
 			websocketSetGpioRespeakerMicHat(2, 0, 0, 0);
 			websocketSetGpioRespeakerMicHat(3, 0, 0, 0);
 		}
+		//GPIO-Interface - Custom Item - Custom Proto Voice HAT (WS281X SPI interface)
+		function websocketRegisterGpioProtoVoiceHat(){
+			websocketSendGpioInterfaceRequest("register", "item", {
+				file: "rpi-spi-rgb-leds",
+				options: {numOfLeds: 1, ledType: "ws281x"}
+			});
+		}
+		function websocketReleaseGpioProtoVoiceHat(){
+			websocketSendGpioInterfaceRequest("release", "item", {
+				file: "rpi-spi-rgb-leds"
+			});
+		}
+		function websocketGetGpioProtoVoiceHat(){
+			websocketSendGpioInterfaceRequest("get", "item", {
+				file: "rpi-spi-rgb-leds"
+			});
+		}
+		function websocketSetGpioProtoVoiceHat(ledIndex, red, green, blue){
+			websocketSendGpioInterfaceRequest("set", "item", {
+				file: "rpi-spi-rgb-leds",
+				data: {ledIndex: ledIndex, red: red, green: green, blue: blue}
+			});
+		}
+		
 		function getRandomLedValue(){
 			return Math.round(Math.random() * 255 * 0.2);
 		}
