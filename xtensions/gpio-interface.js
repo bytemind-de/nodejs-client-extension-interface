@@ -13,7 +13,7 @@ GpioInterface = function(onStartCallback, onEventCallback, onErrorCallback){
 	
 	//release all on server close
 	function cleanUpGpio(eventType){
-		if (cleanUpSuccess){
+		if (cleanUpDone){
 			process.exit(0);
 			return;
 		}
@@ -24,10 +24,10 @@ GpioInterface = function(onStartCallback, onEventCallback, onErrorCallback){
 				console.error("GPIO-Interface: Failed to exit gracefully - Took too long.");
 				process.exit(1);
 			}, 3000);
-			startReleaseAll(function(){
+			startReleaseAll(function(releasedNum, totalNum){
 				//done
 				console.log("GPIO-Interface: EXIT.");		//DEBUG
-				cleanUpSuccess = true;
+				cleanUpDone = true;
 				clearTimeout(exitTimer);
 				process.exit(0);
 			});
@@ -40,18 +40,19 @@ GpioInterface = function(onStartCallback, onEventCallback, onErrorCallback){
 	['exit', 'SIGINT', 'SIGUSR1', 'SIGUSR2', 'SIGTERM'].forEach((eventType) => {
 		process.on(eventType, cleanUpGpio.bind(null, eventType));
 	});
-	var cleanUpSuccess = false;
+	var cleanUpDone = false;
 	
 	//ALL
 	
 	//release all
 	function releaseAll(msgId){
-		startReleaseAll(function(releasedNum){
+		startReleaseAll(function(releasedNum, totalNum){
 			broadcast({
 				type: "releaseAll",
 				msgId: msgId,
 				status: "success",
-				released: releasedNum
+				released: releasedNum,
+				failed: (totalNum - releasedNum)
 			});
 		});
 		return "sent";
@@ -59,33 +60,51 @@ GpioInterface = function(onStartCallback, onEventCallback, onErrorCallback){
 	function startReleaseAll(doneCallback){
 		var shouldRelease = Object.keys(buttons).length + Object.keys(leds).length + Object.keys(items).length;
 		var hasReleased = 0;
+		var failedRelease = 0;
 		console.log("GPIO-Interface: Releasing " + shouldRelease + " registered GPIO handlers.");		//DEBUG
 		//NOTE: we could use 'RIO.closeAll()' to release all buttons and LEDs at the same time
 		//buttons
-		Object.values(buttons).forEach(function(btn){
-			try{ btn.unexport(); hasReleased++; }catch(err){}
-			checkReleaseAllDone(shouldRelease, hasReleased, doneCallback);
+		Object.keys(buttons).forEach(function(id){
+			try {
+				releaseButtonSync(buttons[id]);
+				hasReleased++;
+			}catch(err){
+				failedRelease++;
+			}
+			checkReleaseAllDone(shouldRelease, hasReleased, failedRelease, doneCallback);
 		});
-		buttons = {};
 		//leds
-		Object.values(leds).forEach(function(led){
-			try{ led.unexport(); hasReleased++; }catch(err){}
-			checkReleaseAllDone(shouldRelease, hasReleased, doneCallback);
+		Object.keys(leds).forEach(function(id){
+			try {
+				releaseLedSync(leds[id]);
+				hasReleased++;
+			}catch(err){
+				failedRelease++;
+			}
+			checkReleaseAllDone(shouldRelease, hasReleased, failedRelease, doneCallback);
 		});
-		leds = {};
 		//items
 		Object.values(items).forEach(function(item){
 			item.release(function(){
 				hasReleased++;
-				checkReleaseAllDone(shouldRelease, hasReleased, doneCallback);
-			}, console.error);
+				checkReleaseAllDone(shouldRelease, hasReleased, failedRelease, doneCallback);
+			}, function(err){
+				failedRelease++;
+				checkReleaseAllDone(shouldRelease, hasReleased, failedRelease, doneCallback);
+			});
 		});
-		items = {};
 	}
-	function checkReleaseAllDone(should, has, doneCallback){
-		if (has >= should){
-			console.log("GPIO-Interface: Released all handlers.");		//DEBUG
-			doneCallback(has);
+	function checkReleaseAllDone(should, has, failed, doneCallback){
+		if ((has + failed) >= should){
+			buttons = {};
+			leds = {};
+			items = {};
+			if (failed > 0){
+				console.log("GPIO-Interface: Tried to release all handlers, but " + failed + ".");		//DEBUG
+			}else{
+				console.log("GPIO-Interface: Released all handlers.");		//DEBUG
+			}
+			doneCallback(has, should);
 		}
 	}
 	//get all
@@ -174,7 +193,7 @@ GpioInterface = function(onStartCallback, onEventCallback, onErrorCallback){
 		if (buttons[id]){
 			try {
 				//stop monitoring and release resources
-				buttons[id].close(); 
+				releaseButtonSync(buttons[id]);
 				delete buttons[id];
 				broadcast({
 					type: "buttonRelease",
@@ -195,6 +214,9 @@ GpioInterface = function(onStartCallback, onEventCallback, onErrorCallback){
 			});
 		}
 		return "sent";
+	}
+	function releaseButtonSync(item){
+		item.close();
 	}
 	function onButtonError(msg, code, msgId, itemId){
 		if (onErrorCallback){
@@ -250,7 +272,7 @@ GpioInterface = function(onStartCallback, onEventCallback, onErrorCallback){
 		var id = config.id || (pin + "");
 		if (leds[id]){
 			try {
-				leds[id].close();
+				releaseLedSync(leds[id]);
 				delete leds[id];
 				broadcast({
 					type: "ledRelease",
@@ -271,6 +293,9 @@ GpioInterface = function(onStartCallback, onEventCallback, onErrorCallback){
 			});
 		}
 		return "sent";
+	}
+	function releaseLedSync(item){
+		item.close();
 	}
 	function setLed(config, msgId){
 		var pin = (config.pin != undefined)? +config.pin : undefined;
