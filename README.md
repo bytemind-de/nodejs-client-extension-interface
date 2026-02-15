@@ -79,7 +79,7 @@ Next step is to adjust the CLEXI settings. Use a text editor of your choice, e.g
 ```
 nano settings.json
 ```  
-Here you can change the default port of your server and set the hostname to the SAME name you used for the SSL certificate (e.g. raspberrypi.local). This is important because you might not be able to reach the server otherwhise.  
+Here you can change the default port of your server and set the hostname to the SAME name you used for the SSL certificate (e.g. raspberrypi.local). This is important because you might not be able to reach the server otherwise.  
 To load specific extensions ajust the array: `"xtensions": [...]`. For example if you want to activate runtime commands and GPIO interface add:
 ```
 "xtensions": [
@@ -90,11 +90,13 @@ To load specific extensions ajust the array: `"xtensions": [...]`. For example i
 ]
 ```
 
+Available log levels: `debug`, `info`, `warn`, `error`
+
 ### Run the server
 
 Now you can run your server :-)  
 ```
-sudo node server.js
+sudo node --title=clexi-server server.js
 ```  
 You should see a confirmation that the server is running and that extensions have been loaded (and hopefully no error ^^).  
 The `sudo` command is required for Bluetooth control. If you want to run the server without sudo you have to grant node cap_net_raw privileges:  
@@ -109,7 +111,7 @@ Finally to check if everything worked out fine visit the test-page in your brows
 
 Copy latest Clexi.js library from this repository and include it in your page head, e.g.:
 ```
-<script type="text/javascript" src="lib/clexi-0.9.1.js" charset="UTF-8"></script>
+<script type="text/javascript" src="lib/clexi-0.10.0.js" charset="UTF-8"></script>
 ```
 Make sure your server is running and reachable, then connect like this:
 ```
