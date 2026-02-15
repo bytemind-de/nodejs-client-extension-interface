@@ -187,7 +187,9 @@
 			var hostURL = customHost.value || cachedHost || ""; 	//auto-choose origin
 			if (!hostURL) hostURL = location.origin;
 			else hostURL = hostURL.replace(/^wss/, 'https').replace(/^ws/, 'http');
-			ClexiJS.httpRequest("GET", hostURL + "/ping", function(data){
+			var pingUrl = hostURL + "/ping";
+			log("Sending ping request to: " + pingUrl);
+			ClexiJS.httpRequest("GET", pingUrl, function(data){
 				//Success
 				log("HTTP GET result to 'ping' endpoint: " + data);
 			}, function(){

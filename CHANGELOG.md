@@ -1,5 +1,11 @@
 # Changelog for CLEXI - Client Extension Interface
 
+## v0.10.0
+* Depends on Node.js v20.19.0+ now
+* Replaced deprecated 'onoff' package with 'rpi-io' for GPIO control
+* Replaced out-dated package '@abandonware/noble' with '@stoprocent/noble'
+* Replaced out-dated package 'node-beacon-scanner' with custom fork
+
 ## v0.9.2
 * New gpio-itme 'rpi-spi-rgb-leds' to control WS281X and APA102 LEDs via GPIO SPI
 * Improved self-signed SSL script
