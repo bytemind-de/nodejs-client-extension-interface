@@ -90,7 +90,9 @@ To load specific extensions ajust the array: `"xtensions": [...]`. For example i
 ]
 ```
 
-Available log levels: `debug`, `info`, `warn`, `error`
+Available log levels: `debug`, `info`, `warn`, `error`  
+  
+For tips to get started with Bluetooth-Low-Energy (BLE) check out [node-beacon-scanner](https://github.com/bytemind-de/node-beacon-scanner/tree/master/examples).
 
 ### Run the server
 
