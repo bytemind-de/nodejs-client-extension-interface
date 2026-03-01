@@ -175,7 +175,11 @@
 				
 			}, function(err){
 				//log("CLEXI - something went wrong.");
-				removeSubscriptions();
+				if (err?.name == "AlreadyConnected"){
+					//ignore
+				}else{
+					removeSubscriptions();
+				}
 				
 			}, function(){
 				//log("CLEXI - connecting.");
