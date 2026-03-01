@@ -1,6 +1,5 @@
 const BeaconScanner = require('node-beacon-scanner');
-const noble = require('@stoprocent/noble');
-const scanner = new BeaconScanner({'noble': noble});
+//const { withBindings: nobleWithBindings } = require('@stoprocent/noble');
 
 /**
 * CLEXI extension for Bluetooth LE beacon scanning. The input method uses msg.data.ctrl
@@ -8,19 +7,37 @@ const scanner = new BeaconScanner({'noble': noble});
 */	
 BleBeaconScanner = function(onStartCallback, onEventCallback, onErrorCallback){
 	//Controls
-	var doScan = false;
+	//var autoResume = false;		//TBD
 	var isScanning = false;
 	
-	//Set an Event handler for the Bluetooth service
-	noble.on('stateChange', (state) => {
-		if (state === "poweredOff"){
-			stopScanning();
-		}else if (state === "poweredOn"){
-			if (doScan){
-				startScanning();
+	//const scanner = new BeaconScanner({'noble': noble});
+	const scanner = new BeaconScanner(/* TBD */);
+	
+	//Set error handler for the Bluetooth service
+	scanner.onerror = (err) => {
+		/*if (err.name == "AdapterStateError"){
+			//TBD
+			//autoResume ... ?
+		}*/
+		if (onErrorCallback) onErrorCallback({
+			error: {
+				name: (err.name || "UndefinedScannerError"),
+				msg: (err.message || "unknown"),
+				code: 500
 			}
+		});
+		try {
+			stopScanning();
+		} catch (err) {
+			isScanning = false;
 		}
-	});
+		try {
+			scanner.destroyInstance();
+		} catch (err) {}
+	}
+	//scanner.ondebug = (msg) => { console.log("BleBeaconScanner debug - " + msg); };
+	
+	//TODO: add releaseAll function?
 
 	//Set an Event handler for beacons
 	scanner.onadvertisement = (ad) => {
@@ -44,10 +61,15 @@ BleBeaconScanner = function(onStartCallback, onEventCallback, onErrorCallback){
 						}
 					});
 				}
-			}).catch((error) => {
+			}).catch((err) => {
 				isScanning = false;
 				if (onErrorCallback) onErrorCallback({
-					error: error
+					error: {
+						name: (err.name || "UndefinedScannerError"),
+						msg: (err.message || "unknown"),
+						code: 500,
+						msgId: msgId
+					}
 				});
 			});
 		}
