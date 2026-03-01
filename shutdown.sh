@@ -1,2 +1,2 @@
 #!/bin/bash
-pkill -f "clexi-server.js"
+pkill -f "clexi-server"

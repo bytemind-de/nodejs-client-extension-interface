@@ -1,2 +1,2 @@
 #!/bin/bash
-ps -xa | grep clexi-server.js
+ps -xa | grep "[c]lexi-server" || echo "no process found"

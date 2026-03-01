@@ -1,5 +1,5 @@
 {
-	"hostname": "raspberrypi.local",
+	"hostname": "localhost",
 	"id": "clexi-123",
 	"idIsPassword": false,
 	"port": 8443,

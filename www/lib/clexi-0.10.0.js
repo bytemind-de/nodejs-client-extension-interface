@@ -2,7 +2,7 @@
 var ClexiJS = (function(){
 	var Clexi = {};
 	
-	Clexi.version = "0.9.1";
+	Clexi.version = "0.10.0";
 	Clexi.serverId = "";		//if you set this the client will check the server ID on welcome event and close connection if not identical
 	
 	//Extension subscriptions
@@ -27,6 +27,7 @@ var ClexiJS = (function(){
 	var readyToAcceptEvents = false; 	//the welcome event will set this to true and allow subscriptions (if data is correct)
 	
 	var isConnected = false;
+	var isWaitingForConnection = false;
 	Clexi.isConnected = function(){
 		return isConnected;
 	}
@@ -70,6 +71,12 @@ var ClexiJS = (function(){
 	}
 	
 	Clexi.connect = function(host, onOpen, onClose, onError, onConnecting, onWelcome){
+		if (isConnected || isWaitingForConnection){
+			let errMsg = "Client is already connected. Please close the connection before you start a new one.";
+			if (Clexi.onError) Clexi.onError("CLEXI error: " + errMsg);
+			if (onError) onError({name: "AlreadyConnected", message: errMsg});
+			return;
+		}
 		//URL
 		if (host){
 			//given URL
@@ -101,6 +108,7 @@ var ClexiJS = (function(){
 		}
 		requestedClose = false;
 		readyToAcceptEvents = false;
+		isWaitingForConnection = true;
 		if (Clexi.onLog) Clexi.onLog('CLEXI connecting ...');
 		if (onConnecting) onConnecting();
 		
@@ -108,6 +116,7 @@ var ClexiJS = (function(){
 		
 		ws.onopen = function(me){
 			reconnectTry = 0;
+			isWaitingForConnection = false;
 			isConnected = true;
 			if (reconnectTimer) clearTimeout(reconnectTimer);
 			if (Clexi.onLog) Clexi.onLog('CLEXI connected');
@@ -119,7 +128,13 @@ var ClexiJS = (function(){
 		ws.onmessage = function(me){
 			//console.log(me);
 			msg = JSON.parse(me.data);
-			if (Clexi.onDebug) Clexi.onDebug('CLEXI received msg of type: ' + msg.type);
+			if (Clexi.onDebug){
+				if (!msg.type || msg.type == "undefined"){
+					Clexi.onDebug('CLEXI received msg of type: ' + msg.type + " - Res.: " + msg.response);
+				}else{
+					Clexi.onDebug('CLEXI received msg of type: ' + msg.type);
+				}
+			}
 			
 			//check xtensions first
 			if (readyToAcceptEvents && subscriptions[msg.type]){
@@ -154,6 +169,7 @@ var ClexiJS = (function(){
 		};
 		
 		ws.onerror = function(error){
+			isWaitingForConnection = false;
 			if (Clexi.onError){
 				if (typeof error == "string"){
 					Clexi.onError("CLEXI error: " + error);
@@ -168,6 +184,7 @@ var ClexiJS = (function(){
 		
 		ws.onclose = function(me){
 			isConnected = false;
+			isWaitingForConnection = false;
 			if (Clexi.onLog) Clexi.onLog('CLEXI closed. Reason: ' + me.code + " " + me.reason);
 			if (onClose) onClose(me);
 			//was requested close?

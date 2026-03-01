@@ -38,17 +38,21 @@ See client and extensions section below to get more info.
 ## Raspberry Pi 4 installation
 
 Requirements:  
-* Node.js (v0.9.0+ should **use 14** - v0.8.2 was tested with 9.11.2 and 10.15.3)
-* Some packages for Bluetooth etc.: `sudo apt-get install bluetooth bluez libbluetooth-dev libudev-dev libnss3-tools libcap2-bin openssl procps`
-* To install Node packages you might need: `sudo apt-get install build-essential`
-* SSL certificates for HTTPS (you can use the included script to generate self-signed)
+* Node.js v20.19.0+ (for very old systems you could try the legacy branch that worked with Node.js v14)
+* Some packages for Bluetooth etc.: `sudo apt-get install bluetooth bluez libudev-dev libnss3-tools libcap2-bin openssl procps`
+* To compile Node packages you might need: `sudo apt-get install build-essential libgpiod-dev libbluetooth-dev`
+* For SSL the recommended way is to use Nginx as proxy, but you can use the included script to generate self-signed certificates
 
-### Install Node.js 14
+### Install Node.js v20.19.0+
 
-You can use the official script:
+On Raspberry Pi OS 13 (Trixie) you can simply use:
+- `sudo apt install nodejs npm` (should be at least v20.19.5)
+
+If you need more control or a newer version, get the Node Version Manager NVM:
 ```
-curl -fsSL https://deb.nodesource.com/setup_14.x | sudo -E bash -
-sudo apt-get install -y nodejs
+curl -o- https://raw.githubusercontent.com | bash
+source ~/.bashrc
+nvm install --lts
 ```
 
 ### Install CLEXI
@@ -62,7 +66,7 @@ npm install
 Decide which hostname you want to use for your server. Default is `localhost` but I usually prefer `raspberrypi.local` (default hostname of RPi) to make CLEXI available to all devices in the network.  
 You can change your hostname via the raspi-config tool.  
   
-Optional: Generate some self-signed SSL certificates for your CLEXI server:  
+Optional: Generate self-signed SSL certificates for your CLEXI server:  
 ```
 bash generate_ssl_cert.sh
 ```  
@@ -75,7 +79,7 @@ Next step is to adjust the CLEXI settings. Use a text editor of your choice, e.g
 ```
 nano settings.json
 ```  
-Here you can change the default port of your server and set the hostname to the SAME name you used for the SSL certificate (e.g. raspberrypi.local). This is important because you might not be able to reach the server otherwhise.  
+Here you can change the default port of your server and set the hostname to the SAME name you used for the SSL certificate (e.g. raspberrypi.local). This is important because you might not be able to reach the server otherwise.  
 To load specific extensions ajust the array: `"xtensions": [...]`. For example if you want to activate runtime commands and GPIO interface add:
 ```
 "xtensions": [
@@ -86,11 +90,17 @@ To load specific extensions ajust the array: `"xtensions": [...]`. For example i
 ]
 ```
 
+Available log levels: `debug`, `info`, `warn`, `error`  
+  
+For tips to get started with Bluetooth-Low-Energy (BLE) check out [node-beacon-scanner](https://github.com/bytemind-de/node-beacon-scanner/tree/master/examples).  
+  
+Examples for CLEXI GPIO interface configurations can be found in the [SEPIA Client settings help](https://github.com/SEPIA-Framework/sepia-html-client-app/blob/master/Settings.md#gpio-interface---led-controls).
+
 ### Run the server
 
 Now you can run your server :-)  
 ```
-sudo node server.js
+sudo node --title=clexi-server server.js
 ```  
 You should see a confirmation that the server is running and that extensions have been loaded (and hopefully no error ^^).  
 The `sudo` command is required for Bluetooth control. If you want to run the server without sudo you have to grant node cap_net_raw privileges:  
@@ -105,7 +115,7 @@ Finally to check if everything worked out fine visit the test-page in your brows
 
 Copy latest Clexi.js library from this repository and include it in your page head, e.g.:
 ```
-<script type="text/javascript" src="lib/clexi-0.9.0.js" charset="UTF-8"></script>
+<script type="text/javascript" src="lib/clexi-0.10.0.js" charset="UTF-8"></script>
 ```
 Make sure your server is running and reachable, then connect like this:
 ```
@@ -173,3 +183,13 @@ CLEXI will then broadcast the data as following message object to all Websocket 
 ## Version history
 
 See [changelog](CHANGELOG.md)
+
+## Credits
+
+* [RPI-IO](https://github.com/gdorbes/rpi-io) - Library to read GPIO events and write states
+* [noble](https://github.com/stoprocent/noble) - Node.js BLE (Bluetooth Low Energy) central module
+* [node-beacon-scanner](https://github.com/bytemind-de/node-beacon-scanner) - Wrapper around 'noble' to handle BLE beacon events
+* [spi-device](https://github.com/fivdi/spi-device) - SPI serial bus access with Node.js
+* [usb](https://github.com/node-usb/node-usb) - USB library for Node.js
+* [SEPIA](https://github.com/SEPIA-Framework) - S.E.P.I.A. Open Assistant and Framework
+ 
